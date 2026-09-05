@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js">
     </script>
     <style>
+        /* 样式保持不变，省略... 你已有的样式保留 */
         * {
             margin: 0;
             padding: 0;
@@ -303,16 +304,6 @@
             color: #ff9800;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
-        .empty-state .icon {
-            font-size: 48px;
-            margin-bottom: 12px;
-        }
-
         @media (max-width: 480px) {
             .container {
                 padding: 20px 16px;
@@ -349,7 +340,6 @@
             <small>生成器</small>
         </h1>
 
-        <!-- 选择人员 -->
         <div class="selector-wrap">
             <select id="memberSelect">
                 <option value="">-- 请选择成员 --</option>
@@ -357,7 +347,6 @@
             <button class="btn" id="generateBtn">生成二维码</button>
         </div>
 
-        <!-- 成员信息 -->
         <div id="memberInfo" class="member-info" style="display:none;">
             <div class="avatar" id="infoAvatar">庄</div>
             <div class="detail">
@@ -368,7 +357,6 @@
             <span class="status-badge active" id="infoStatus">✅ 在职</span>
         </div>
 
-        <!-- 二维码 -->
         <div class="qr-section" id="qrSection" style="display:none;">
             <div class="qr-wrapper">
                 <div id="qrcode"></div>
@@ -378,14 +366,12 @@
             </div>
         </div>
 
-        <!-- 链接 -->
         <div class="link-box" id="linkBox" style="display:none;">
             <span style="font-size:13px;color:#666;">🔗</span>
             <input type="text" id="linkInput" readonly value="">
             <button class="copy-btn" id="copyLinkBtn">复制</button>
         </div>
 
-        <!-- 尺寸控制 -->
         <div class="size-control" id="sizeControl" style="display:none;">
             <label>二维码尺寸</label>
             <input type="range" id="sizeRange" min="80" max="300" value="180" step="10">
@@ -393,14 +379,12 @@
             <span style="font-size:12px;color:#888;">px</span>
         </div>
 
-        <!-- 操作按钮 -->
         <div class="btn-group" id="actionBtns" style="display:none;">
             <button class="btn outline" id="downloadBtn">⬇️ 下载 PNG</button>
             <button class="btn outline" id="copyImageBtn">📋 复制图片</button>
             <button class="btn danger" id="clearBtn">🗑️ 清除</button>
         </div>
 
-        <!-- 环境提示 -->
         <div class="env-hint" id="envHint">
             🌐 当前环境：<span id="envLabel">加载中...</span>
             <span style="margin-left:8px;">|</span>
@@ -409,8 +393,6 @@
 
         <div class="tips">
             💡 生成的二维码指向 <code>verify.html?id=编号</code> · 客户扫码即可核验身份
-            <br>
-            支持下载PNG或复制到剪贴板，可粘贴到名片设计器中
         </div>
     </div>
 
@@ -418,36 +400,43 @@
 
     <script>
         // ================================================================
-        // 环境检测 - 自动判断是本地还是线上
+        // 环境检测 - 自动判断是本地还是线上（优化版）
         // ================================================================
 
         function getBaseUrl() {
             const host = window.location.host;
             const pathname = window.location.pathname;
+            const origin = window.location.origin;
 
-            // 本地开发（127.0.0.1 或 localhost）
+            // ========== 本地开发环境 ==========
             if (host.includes('127.0.0.1') || host.includes('localhost') || host.includes('192.168.')) {
-                const base = window.location.origin + pathname.replace(/\/[^/]*$/, '');
+                const base = origin + pathname.replace(/\/[^/]*$/, '');
                 console.log('📌 本地环境，BASE_URL:', base);
                 return base;
             }
 
-            // GitHub Pages 环境
-            const parts = pathname.split('/').filter(p => p !== '');
-            if (parts.length > 0) {
-                // 有子路径（仓库站点）
-                const repoName = parts[0];
-                const base = window.location.origin + '/' + repoName;
-                console.log('📌 GitHub Pages 仓库环境，BASE_URL:', base);
-                return base;
-            } else {
-                // 用户站点（没有子路径）
-                const base = window.location.origin;
-                console.log('📌 GitHub Pages 用户站点，BASE_URL:', base);
-                return base;
+            // ========== GitHub Pages 环境 ==========
+            if (host.includes('github.io')) {
+                const parts = pathname.split('/').filter(p => p !== '');
+                if (parts.length > 0) {
+                    // 仓库站点：https://用户名.github.io/仓库名/
+                    const base = origin + '/' + parts[0];
+                    console.log('📌 GitHub Pages 仓库环境，BASE_URL:', base);
+                    return base;
+                } else {
+                    // 用户站点：https://用户名.github.io/
+                    console.log('📌 GitHub Pages 用户站点，BASE_URL:', origin);
+                    return origin;
+                }
             }
+
+            // ========== 其他线上环境 ==========
+            const base = origin + pathname.replace(/\/[^/]*$/, '');
+            console.log('📌 其他线上环境，BASE_URL:', base);
+            return base;
         }
 
+        // 计算 BASE_URL
         const BASE_URL = getBaseUrl();
         const isLocal = window.location.host.includes('127.0.0.1') || window.location.host.includes('localhost');
 
@@ -482,7 +471,6 @@
                     if (data && data.length > 0) return data;
                 } catch (e) {}
             }
-            // 默认数据
             const defaults = [{
                 id: 'CCPEFYHDC2026110001',
                 name: '庄国辉',
@@ -545,7 +533,6 @@
                 sel.appendChild(opt);
             });
 
-            // 如果URL有id参数，自动选中
             const params = new URLSearchParams(window.location.search);
             const idParam = params.get('id');
             if (idParam && employees.some(e => e.id === idParam)) {
@@ -567,7 +554,6 @@
 
             currentMemberId = memberId;
 
-            // 显示成员信息
             const infoDiv = document.getElementById('memberInfo');
             infoDiv.style.display = 'flex';
             document.getElementById('infoAvatar').textContent = member.name.charAt(0);
@@ -588,18 +574,16 @@
                 statusBadge.className = 'status-badge inactive';
             }
 
-            // 生成二维码 - 使用 BASE_URL 指向 verify.html
+            // ★★★ 关键修复：使用 BASE_URL 生成完整链接 ★★★
             const verifyUrl = BASE_URL + '/verify.html?id=' + member.id;
             document.getElementById('qrLinkLabel').textContent = verifyUrl;
             document.getElementById('linkInput').value = verifyUrl;
 
-            // 显示各区域
             document.getElementById('qrSection').style.display = 'block';
             document.getElementById('linkBox').style.display = 'flex';
             document.getElementById('sizeControl').style.display = 'flex';
             document.getElementById('actionBtns').style.display = 'flex';
 
-            // 生成二维码
             const qrContainer = document.getElementById('qrcode');
             qrContainer.innerHTML = '';
 
@@ -646,18 +630,15 @@
             const member = getMember(currentMemberId);
             if (!member) return;
 
-            // 创建带边框和标签的完整二维码图片
             const size = currentSize + 80;
             const c = document.createElement('canvas');
             c.width = size;
             c.height = size + 60;
             const ctx = c.getContext('2d');
 
-            // 背景
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, c.width, c.height);
 
-            // 圆角矩形边框
             const r = 16;
             const x = 40,
                 y = 30,
@@ -680,11 +661,9 @@
             ctx.lineWidth = 3;
             ctx.stroke();
 
-            // 绘制二维码
             const qrCanvas = document.querySelector('#qrcode canvas');
             ctx.drawImage(qrCanvas, 40, 30, currentSize, currentSize);
 
-            // 底部文字
             ctx.fillStyle = '#1b5e20';
             ctx.font = 'bold 16px "PingFang SC","Microsoft YaHei",sans-serif';
             ctx.textAlign = 'center';
@@ -694,7 +673,6 @@
             ctx.font = '12px "PingFang SC","Microsoft YaHei",sans-serif';
             ctx.fillText(member.name + ' | ' + member.id, c.width / 2, c.height - 8);
 
-            // 下载
             const link = document.createElement('a');
             link.download = '核验二维码_' + member.name + '_' + member.id + '.png';
             link.href = c.toDataURL('image/png');
@@ -780,7 +758,6 @@
             generateQR(id);
         });
 
-        // 选择变更时自动生成
         document.getElementById('memberSelect').addEventListener('change', function() {
             const id = this.value;
             if (id) {
@@ -806,9 +783,7 @@
 
         populateSelector();
         console.log('✅ 二维码生成器已启动');
-        console.log('📌 数据来源:', DB_KEY);
         console.log('📌 核验页面:', BASE_URL + '/verify.html');
-        console.log('📌 环境:', isLocal ? '本地开发' : '线上部署');
     </script>
 </body>
 </html>
