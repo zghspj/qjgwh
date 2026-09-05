@@ -134,7 +134,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* ===== 核验标识 - 委员会Logo ===== */
         .verify-brand {
             display: flex;
             align-items: center;
@@ -327,6 +326,18 @@
             opacity: 1;
         }
 
+        /* 环境提示 - 本地调试用 */
+        .env-hint {
+            font-size: 10px;
+            color: #ccc;
+            text-align: center;
+            margin-top: 6px;
+            display: none;
+        }
+        .env-hint.show {
+            display: block;
+        }
+
         @media (max-width: 440px) {
             .container {
                 padding: 20px 16px;
@@ -385,6 +396,9 @@
 
         <!-- 内容由JS渲染 -->
         <div id="content"></div>
+
+        <!-- 环境提示（调试用） -->
+        <div class="env-hint" id="envHint">🌐 当前环境：<span id="envLabel">本地</span></div>
     </div>
 
     <div id="toast" class="toast">操作成功</div>
@@ -396,6 +410,64 @@
 
         const DB_KEY = 'emp_system_data';
 
+        // ================================================================
+        // 环境检测 - 自动判断是本地还是线上
+        // ================================================================
+
+        function getBaseUrl() {
+            const host = window.location.host;
+            const pathname = window.location.pathname;
+
+            // 如果是本地开发（127.0.0.1 或 localhost）
+            if (host.includes('127.0.0.1') || host.includes('localhost') || host.includes('192.168.')) {
+                // 本地环境，使用当前路径
+                const base = window.location.origin + pathname.replace(/\/[^/]*$/, '');
+                console.log('📌 本地环境，BASE_URL:', base);
+                return base;
+            }
+
+            // GitHub Pages 环境
+            // 如果是 GitHub Pages，需要获取仓库名
+            // 例如：https://zghspj.github.io/business-card-system/
+            // 或者：https://zghspj.github.io/（如果是用户站点）
+            const parts = pathname.split('/').filter(p => p !== '');
+            if (parts.length > 0) {
+                // 有子路径（仓库站点）
+                const repoName = parts[0];
+                const base = window.location.origin + '/' + repoName;
+                console.log('📌 GitHub Pages 仓库环境，BASE_URL:', base);
+                return base;
+            } else {
+                // 用户站点（没有子路径）
+                const base = window.location.origin;
+                console.log('📌 GitHub Pages 用户站点，BASE_URL:', base);
+                return base;
+            }
+        }
+
+        // 获取当前环境的基础URL
+        const BASE_URL = getBaseUrl();
+
+        // 显示环境提示（调试用）
+        const isLocal = window.location.host.includes('127.0.0.1') || window.location.host.includes('localhost');
+        const envHint = document.getElementById('envHint');
+        if (isLocal) {
+            envHint.classList.add('show');
+            document.getElementById('envLabel').textContent = '本地开发 (127.0.0.1)';
+            envHint.style.color = '#ff9800';
+        } else {
+            envHint.classList.add('show');
+            document.getElementById('envLabel').textContent = 'GitHub Pages 线上';
+            envHint.style.color = '#4caf50';
+        }
+
+        console.log('🌐 当前环境 BASE_URL:', BASE_URL);
+        console.log('📌 完整核验链接示例:', BASE_URL + '/verify.html?id=CCPEFYHDC2026110001');
+
+        // ================================================================
+        // 数据操作
+        // ================================================================
+
         function getEmployees() {
             const stored = localStorage.getItem(DB_KEY);
             if (stored) {
@@ -404,11 +476,12 @@
                     if (data && data.length > 0) return data;
                 } catch (e) {}
             }
+            // 默认数据
             const defaults = [{
                 id: 'CCPEFYHDC2026110001',
                 name: '庄国辉',
                 title: '副主任兼办公室主任',
-                duty: '负责健康工作委员会全面事务与统筹协调...',
+                duty: '负责健康工作委员会全面事务与统筹协调。具体包括：主持办公室全面工作，统筹协调各内设机构日常运转；负责秘书处日常工作，承担文秘、会务、机要、档案等综合管理；协调各副主任委员分管工作，督办重要会议事项落实；负责人事、财务、资产、后勤等行政事务管理；负责会员管理、对外联络与来访接待工作。',
                 phone: '18520661777',
                 email: 'zjxqab@163.com',
                 address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
@@ -449,8 +522,10 @@
                 const employees = getEmployees();
                 const active = employees.find(e => e.status === 1);
                 if (active) {
-                    window.history.replaceState({}, '', '?id=' + active.id);
-                    renderPage();
+                    // 自动跳转到正确的URL（使用BASE_URL）
+                    const correctUrl = BASE_URL + '/verify.html?id=' + active.id;
+                    console.log('🔄 自动跳转到:', correctUrl);
+                    window.location.href = correctUrl;
                     return;
                 }
                 content.innerHTML = `
@@ -459,7 +534,11 @@
                         <div style="font-size:18px;font-weight:600;color:#1b5e20;">暂无在职人员</div>
                         <p style="color:#888;font-size:14px;margin-top:8px;">请在管理后台添加成员</p>
                         <div style="margin-top:16px;">
-                            <a href="admin.html" style="color:#2e7d32;font-weight:600;text-decoration:none;border-bottom:2px solid #4caf50;padding-bottom:2px;">前往管理后台 →</a>
+                            <a href="${BASE_URL}/admin.html" style="color:#2e7d32;font-weight:600;text-decoration:none;border-bottom:2px solid #4caf50;padding-bottom:2px;">前往管理后台 →</a>
+                        </div>
+                        <div style="margin-top:12px;font-size:12px;color:#ccc;">
+                            🌐 当前环境: ${isLocal ? '本地开发' : '线上部署'}
+                            <br>BASE_URL: ${BASE_URL}
                         </div>
                     </div>
                 `;
@@ -473,7 +552,7 @@
                         <div class="badge notfound">🔍 查无此人</div>
                         <p style="color:#888;font-size:14px;margin-top:8px;">编号 ${id} 不存在</p>
                         <div style="margin-top:16px;">
-                            <a href="admin.html" style="color:#2e7d32;font-weight:600;text-decoration:none;border-bottom:2px solid #4caf50;padding-bottom:2px;">前往管理后台 →</a>
+                            <a href="${BASE_URL}/admin.html" style="color:#2e7d32;font-weight:600;text-decoration:none;border-bottom:2px solid #4caf50;padding-bottom:2px;">前往管理后台 →</a>
                         </div>
                     </div>
                     <div class="verify-footer">
@@ -496,11 +575,12 @@
                 avatarHtml = `<div class="avatar">${member.name.charAt(0)}</div>`;
             }
 
-            // ========== 核验标识 - 使用 ccpef-yhdc.png ==========
             const verifyBrandHtml = `
                 <div class="verify-brand">
-                    <img src="ccpef-yhdc.png" class="brand-logo" alt="委员会Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div class="brand-text" style="display:flex; flex-direction:column;">
+                    <img src="${BASE_URL}/ccpef-yhdc.png" class="brand-logo" alt="委员会Logo" 
+                         onerror="this.style.display='none'; this.parentElement.querySelector('.brand-fallback').style.display='flex';">
+                    <div class="brand-fallback" style="display:none;width:52px;height:52px;border-radius:50%;background:#2e7d32;color:#fff;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;border:2px solid #4caf50;">🌳</div>
+                    <div class="brand-text">
                         <span class="title">中国林业与环境促进会</span>
                         <span class="sub">青少年儿童生态健康发展工作委员会</span>
                         <span class="highlight">🔒 官方身份核验</span>
@@ -509,7 +589,6 @@
             `;
 
             content.innerHTML = `
-                <!-- 顶部Logo -->
                 <div class="top-logos">
                     <div class="left-logo">
                         <div class="logo-text">
@@ -524,12 +603,9 @@
                     </div>
                 </div>
 
-                <!-- 核验标识 - 委员会Logo -->
                 ${verifyBrandHtml}
-
                 ${badgeHtml}
 
-                <!-- 个人信息 -->
                 <div class="profile">
                     ${avatarHtml}
                     <div class="info">
@@ -538,7 +614,6 @@
                     </div>
                 </div>
 
-                <!-- 详细信息 -->
                 <div class="info-row">
                     <span class="label">编号</span>
                     <span class="value">${member.id}</span>
@@ -561,28 +636,27 @@
                     </span>
                 </div>
 
-                <!-- 操作按钮 -->
                 <div class="action-buttons">
                     <button class="btn outline" id="backBtn">🔙 返回</button>
                     <button class="btn" id="viewCardBtn">👁️ 查看名片</button>
                 </div>
 
-                <!-- 底部 -->
                 <div class="verify-footer">
                     <div class="org">中国林业与环境促进会 · 青少年儿童生态健康发展工作委员会</div>
                     <div class="time">核验时间：${new Date().toLocaleString('zh-CN')}</div>
                     <div class="verify-badge">🔒 官方核验 · 信息真实有效</div>
+                    <div style="font-size:10px;color:#ccc;margin-top:6px;">
+                        🌐 ${isLocal ? '本地开发' : '线上部署'} · ${BASE_URL}
+                    </div>
                 </div>
             `;
 
-            // 绑定按钮事件
             document.getElementById('backBtn').addEventListener('click', function() {
                 window.history.back();
             });
 
             document.getElementById('viewCardBtn').addEventListener('click', function() {
-                const baseUrl = window.location.href.split('?')[0].replace('verify.html', 'card.html');
-                window.open(baseUrl + '?id=' + member.id, '_blank');
+                window.open(BASE_URL + '/card.html?id=' + member.id, '_blank');
             });
         }
 
@@ -602,9 +676,12 @@
         // 启动
         // ================================================================
 
+        console.log('🚀 核验页面启动');
+        console.log('🌐 BASE_URL:', BASE_URL);
+        console.log('📌 当前URL:', window.location.href);
+
         renderPage();
         window.addEventListener('popstate', renderPage);
-        console.log('✅ 核验页面已启动');
     </script>
 </body>
 </html>
