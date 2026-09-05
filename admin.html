@@ -35,6 +35,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         h1 small {
             font-size: 14px;
@@ -143,6 +145,12 @@
         .btn-sm.danger {
             background: #c62828;
         }
+        .btn-sm.warning {
+            background: #f57c00;
+        }
+        .btn-sm.warning:hover {
+            background: #e65100;
+        }
         .btn-group {
             display: flex;
             gap: 10px;
@@ -151,13 +159,43 @@
         .btn-group .btn {
             flex: 1;
         }
-        .member-list {
+
+        /* ===== 成员列表 - 可滚动 ===== */
+        .member-list-wrap {
             margin-top: 20px;
-            max-height: 400px;
-            overflow-y: auto;
             border-top: 1px solid #e0e0e0;
             padding-top: 16px;
         }
+        .member-list-wrap .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .member-list-wrap .list-header .count {
+            font-size: 13px;
+            color: #888;
+        }
+        .member-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .member-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .member-list::-webkit-scrollbar-track {
+            background: #f1f8e9;
+            border-radius: 8px;
+        }
+        .member-list::-webkit-scrollbar-thumb {
+            background: #a5d6a7;
+            border-radius: 8px;
+        }
+        .member-list::-webkit-scrollbar-thumb:hover {
+            background: #81c784;
+        }
+
         .member-item {
             display: flex;
             justify-content: space-between;
@@ -165,15 +203,27 @@
             padding: 10px 14px;
             background: #f1f8e9;
             border-radius: 14px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             flex-wrap: wrap;
             gap: 6px;
+            transition: 0.2s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .member-item:hover {
+            background: #e8f5e9;
+            border-color: #c8e6c9;
+        }
+        .member-item.editing {
+            border-color: #c9a84c;
+            background: #fff8e1;
         }
         .member-item .info {
             display: flex;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
+            flex: 1;
         }
         .member-item .info .thumb {
             width: 36px;
@@ -188,6 +238,21 @@
             font-weight: 700;
             color: #2e7d32;
             font-size: 14px;
+            flex-shrink: 0;
+        }
+        .member-item .info .name-id {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.3;
+        }
+        .member-item .info .name-id .name {
+            font-weight: 600;
+            color: #1b5e20;
+            font-size: 14px;
+        }
+        .member-item .info .name-id .id {
+            font-size: 11px;
+            color: #999;
         }
         .member-item .info .tag {
             background: #4caf50;
@@ -203,15 +268,21 @@
         .member-item .actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
             flex-wrap: wrap;
         }
         .member-item .actions a {
             color: #2e7d32;
             text-decoration: none;
             font-weight: 600;
-            font-size: 13px;
-            border-bottom: 1px dashed #2e7d32;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #e8f5e9;
+            transition: 0.2s;
+        }
+        .member-item .actions a:hover {
+            background: #c8e6c9;
         }
         .member-item .actions .del {
             color: #c62828;
@@ -219,9 +290,34 @@
             cursor: pointer;
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: 18px;
             padding: 0 4px;
+            line-height: 1;
         }
+        .member-item .actions .del:hover {
+            color: #b71c1c;
+        }
+        .member-item .edit-badge {
+            font-size: 10px;
+            color: #c9a84c;
+            font-weight: 600;
+            background: #fff8e1;
+            padding: 2px 10px;
+            border-radius: 12px;
+            border: 1px solid #c9a84c;
+        }
+        .member-item .edit-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #c9a84c;
+            flex-shrink: 0;
+            display: none;
+        }
+        .member-item.editing .edit-indicator {
+            display: block;
+        }
+
         .toast {
             background: #1b5e20;
             color: #fff;
@@ -262,6 +358,7 @@
             margin-bottom: 16px;
             font-size: 13px;
             color: #2e7d32;
+            flex-wrap: wrap;
         }
         .stats span {
             font-weight: 600;
@@ -287,6 +384,113 @@
         .quick-links a:hover {
             background: #c8e6c9;
         }
+        .data-source {
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+            padding: 8px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .data-source .badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .data-source .badge.local {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .data-source .badge.github {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .sync-btn {
+            background: #1976d2;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 14px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .sync-btn:hover {
+            background: #0d47a1;
+        }
+        .sync-btn.green {
+            background: #2e7d32;
+        }
+        .sync-btn.green:hover {
+            background: #1b5e20;
+        }
+
+        /* 编辑状态提示 */
+        .edit-mode-hint {
+            display: none;
+            background: #fff8e1;
+            border: 1px solid #c9a84c;
+            border-radius: 12px;
+            padding: 10px 16px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: #e65100;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .edit-mode-hint.show {
+            display: flex;
+        }
+        .edit-mode-hint .btn-sm {
+            margin-left: auto;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-overlay.show {
+            display: flex;
+        }
+        .loading-box {
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        .loading-box .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e8f5e9;
+            border-top: 4px solid #2e7d32;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         @media (max-width: 480px) {
             .panel {
                 padding: 20px 16px;
@@ -303,16 +507,48 @@
                 font-size: 12px;
                 padding: 4px 12px;
             }
+            .data-source {
+                font-size: 11px;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .member-list {
+                max-height: 300px;
+            }
+            .edit-mode-hint {
+                font-size: 12px;
+            }
+            .edit-mode-hint .btn-sm {
+                font-size: 11px;
+                padding: 4px 10px;
+            }
         }
     </style>
 </head>
 <body>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-box">
+            <div class="spinner"></div>
+            <p id="loadingText">正在加载数据...</p>
+        </div>
+    </div>
 
     <div class="panel">
         <h1>
             🌱 成员管理
             <small id="totalCount">共 0 人</small>
         </h1>
+
+        <!-- 数据源状态 -->
+        <div class="data-source" id="dataSource">
+            <span>📦 数据源：</span>
+            <span class="badge local" id="sourceBadge">本地缓存</span>
+            <span id="sourceInfo">未加载</span>
+            <button class="sync-btn" id="syncFromGitHubBtn">🔄 从仓库同步</button>
+            <button class="sync-btn green" id="exportToGitHubBtn">📤 导出到仓库</button>
+        </div>
 
         <div class="stats">
             <span>👤 在职：<span id="activeCount">0</span></span>
@@ -323,6 +559,12 @@
             <a href="designer.html" target="_blank">🎨 名片设计器</a>
             <a href="qrcode.html" target="_blank">📱 二维码生成器</a>
             <a href="card.html" target="_blank">👁️ 名片预览</a>
+        </div>
+
+        <!-- 编辑模式提示 -->
+        <div class="edit-mode-hint" id="editModeHint">
+            ✏️ 正在编辑：<strong id="editingName">-</strong>（编号：<span id="editingId">-</span>）
+            <button class="btn-sm warning" id="cancelEditBtn">取消编辑</button>
         </div>
 
         <form id="memberForm">
@@ -382,22 +624,30 @@
                     <option value="0">❌ 离职</option>
                 </select>
             </div>
-            <button type="submit" class="btn">➕ 添加 / 更新成员</button>
+            <button type="submit" class="btn" id="submitBtn">➕ 添加成员</button>
         </form>
 
         <div class="btn-group" style="margin-top:16px;">
             <button id="resetDataBtn" class="btn danger">重置默认数据</button>
         </div>
 
-        <div class="member-list" id="memberList"></div>
+        <!-- 成员列表 - 可滚动 -->
+        <div class="member-list-wrap">
+            <div class="list-header">
+                <span class="count" id="listCount">共 0 人</span>
+                <span style="font-size:12px;color:#999;">💡 点击成员可编辑</span>
+            </div>
+            <div class="member-list" id="memberList"></div>
+        </div>
 
         <div class="btn-group" style="margin-top:16px;">
-            <button id="exportBtn" class="btn outline">📤 导出</button>
-            <button id="importBtn" class="btn outline">📥 导入</button>
+            <button id="exportBtn" class="btn outline">📤 导出 JSON</button>
+            <button id="importBtn" class="btn outline">📥 导入 JSON</button>
             <input type="file" id="fileInput" accept=".json" style="display:none;">
         </div>
         <p style="font-size:11px; color:#aaa; margin-top:12px; text-align:center;">
-            💡 数据存于浏览器本地 · 各工具独立运行，共享数据
+            💡 点击 <strong>"从仓库同步"</strong> 加载 <code>members.json</code>
+            · 点击 <strong>"导出到仓库"</strong> 下载 JSON 文件
         </p>
     </div>
 
@@ -405,10 +655,38 @@
 
     <script>
         // ================================================================
-        // 数据层 - 唯一数据源
+        // 配置
         // ================================================================
 
         const DB_KEY = 'emp_system_data';
+        const JSON_FILE = 'members.json';
+
+        function getBaseUrl() {
+            const host = window.location.host;
+            const pathname = window.location.pathname;
+            const origin = window.location.origin;
+
+            if (host.includes('127.0.0.1') || host.includes('localhost') || host.includes('192.168.')) {
+                return origin + pathname.replace(/\/[^/]*$/, '');
+            }
+
+            if (host.includes('github.io')) {
+                const parts = pathname.split('/').filter(p => p !== '');
+                if (parts.length > 0) {
+                    return origin + '/' + parts[0];
+                }
+                return origin;
+            }
+
+            return origin + pathname.replace(/\/[^/]*$/, '');
+        }
+
+        const BASE_URL = getBaseUrl();
+        const JSON_URL = BASE_URL + '/' + JSON_FILE;
+
+        // ================================================================
+        // 默认数据
+        // ================================================================
 
         const DEFAULT_EMPLOYEES = [{
             id: 'CCPEFYHDC2026110001',
@@ -434,62 +712,164 @@
             status: 1
         }];
 
-        // ----- 数据操作 -----
+        // ================================================================
+        // 数据操作
+        // ================================================================
+
+        let employees = [];
+        let dataSource = 'local';
+        let editingId = null; // 正在编辑的成员ID
+
         function getEmployees() {
-            const stored = localStorage.getItem(DB_KEY);
-            if (stored) {
-                try {
-                    const data = JSON.parse(stored);
-                    if (data && data.length > 0) return data;
-                } catch (e) {}
-            }
-            setEmployees(DEFAULT_EMPLOYEES);
-            return DEFAULT_EMPLOYEES;
+            return employees;
         }
 
         function setEmployees(data) {
+            employees = data;
             localStorage.setItem(DB_KEY, JSON.stringify(data));
+            renderList();
+            updateStats();
+            updateListCount();
         }
 
         function getMember(id) {
-            const list = getEmployees();
-            return list.find(e => e.id === id) || null;
+            return employees.find(e => e.id === id) || null;
         }
 
         function saveMember(member) {
-            const list = getEmployees();
-            const idx = list.findIndex(e => e.id === member.id);
+            const idx = employees.findIndex(e => e.id === member.id);
             if (idx > -1) {
-                list[idx] = member;
+                employees[idx] = member;
             } else {
-                list.push(member);
+                employees.push(member);
             }
-            setEmployees(list);
-            return list;
+            localStorage.setItem(DB_KEY, JSON.stringify(employees));
+            renderList();
+            updateStats();
+            updateListCount();
+            return employees;
         }
 
         function deleteMember(id) {
-            let list = getEmployees();
-            list = list.filter(e => e.id !== id);
-            setEmployees(list);
-            return list;
+            employees = employees.filter(e => e.id !== id);
+            localStorage.setItem(DB_KEY, JSON.stringify(employees));
+            renderList();
+            updateStats();
+            updateListCount();
+            return employees;
         }
 
         // ================================================================
-        // UI 渲染
+        // 从 GitHub 加载数据
         // ================================================================
+
+        async function loadFromGitHub() {
+            showLoading('正在从仓库加载数据...');
+            try {
+                const response = await fetch(JSON_URL, {
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                const data = await response.json();
+
+                if (Array.isArray(data) && data.length > 0) {
+                    employees = data;
+                    localStorage.setItem(DB_KEY, JSON.stringify(data));
+                    dataSource = 'github';
+                    updateDataSourceUI('✅ 已从仓库加载', 'github');
+                    renderList();
+                    updateStats();
+                    updateListCount();
+                    showToast('✅ 已从仓库加载 ' + data.length + ' 条数据');
+                } else {
+                    throw new Error('数据为空');
+                }
+            } catch (e) {
+                console.warn('⚠️ 从仓库加载失败:', e.message);
+                const stored = localStorage.getItem(DB_KEY);
+                if (stored) {
+                    try {
+                        employees = JSON.parse(stored);
+                        if (employees.length > 0) {
+                            dataSource = 'local';
+                            updateDataSourceUI('⚠️ 仓库加载失败，使用本地缓存', 'local');
+                            renderList();
+                            updateStats();
+                            updateListCount();
+                            showToast('⚠️ 仓库加载失败，使用本地缓存');
+                            return;
+                        }
+                    } catch (e2) {}
+                }
+                employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
+                localStorage.setItem(DB_KEY, JSON.stringify(employees));
+                dataSource = 'local';
+                updateDataSourceUI('⚠️ 仓库加载失败，使用默认数据', 'local');
+                renderList();
+                updateStats();
+                updateListCount();
+                showToast('⚠️ 仓库加载失败，使用默认数据');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ================================================================
+        // 导出到 GitHub
+        // ================================================================
+
+        function exportToGitHub() {
+            const data = getEmployees();
+            if (data.length === 0) {
+                showToast('⚠️ 没有数据可导出');
+                return;
+            }
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'members.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('✅ 已下载 members.json，请上传到 GitHub 仓库根目录');
+        }
+
+        // ================================================================
+        // UI 更新
+        // ================================================================
+
+        function updateDataSourceUI(status, source) {
+            const badge = document.getElementById('sourceBadge');
+            const info = document.getElementById('sourceInfo');
+
+            if (source === 'github') {
+                badge.textContent = '📦 仓库数据';
+                badge.className = 'badge github';
+                info.textContent = status + ' | ' + employees.length + ' 人';
+            } else {
+                badge.textContent = '💻 本地缓存';
+                badge.className = 'badge local';
+                info.textContent = status + ' | ' + employees.length + ' 人';
+            }
+        }
+
+        function updateListCount() {
+            document.getElementById('listCount').textContent = '共 ' + employees.length + ' 人';
+        }
 
         function renderList() {
             const list = document.getElementById('memberList');
-            const employees = getEmployees();
-
-            document.getElementById('totalCount').textContent = '共 ' + employees.length + ' 人';
-            const active = employees.filter(e => e.status === 1).length;
-            document.getElementById('activeCount').textContent = active;
-            document.getElementById('inactiveCount').textContent = employees.length - active;
-
             if (employees.length === 0) {
-                list.innerHTML = '<p style="color:#999; text-align:center; padding:16px;">暂无成员</p>';
+                list.innerHTML = '<p style="color:#999; text-align:center; padding:20px;">暂无成员</p>';
                 return;
             }
 
@@ -497,39 +877,132 @@
                 let thumb = emp.avatar ? `<img src="${emp.avatar}" class="thumb">` :
                     `<div class="thumb">${emp.name.charAt(0)}</div>`;
                 let wechatIcon = emp.wechatQr ? '📱' : '';
+                const isEditing = editingId === emp.id;
                 return `
-                    <div class="member-item">
+                    <div class="member-item ${isEditing ? 'editing' : ''}" data-id="${emp.id}">
                         <div class="info">
                             ${thumb}
-                            <strong>${emp.name}</strong>
-                            <span style="font-size:12px;color:#888;">${emp.id.slice(-6)}</span>
+                            <div class="name-id">
+                                <span class="name">${emp.name}</span>
+                                <span class="id">${emp.id}</span>
+                            </div>
                             <span class="tag ${emp.status===0?'off':''}">${emp.status===1?'在职':'离职'}</span>
                             ${wechatIcon ? `<span style="font-size:12px;color:#4caf50;">${wechatIcon}</span>` : ''}
+                            ${isEditing ? '<span class="edit-badge">✏️ 编辑中</span>' : ''}
+                            <span class="edit-indicator"></span>
                         </div>
                         <div class="actions">
-                            <a href="card.html?id=${emp.id}" target="_blank">查看名片</a>
+                            <a href="card.html?id=${emp.id}" target="_blank">名片</a>
                             <a href="designer.html?id=${emp.id}" target="_blank">设计</a>
                             <a href="qrcode.html?id=${emp.id}" target="_blank">二维码</a>
-                            <button class="del" data-id="${emp.id}">✕</button>
+                            <button class="del" data-id="${emp.id}" title="删除">✕</button>
                         </div>
                     </div>
                 `;
             }).join('');
 
+            // 点击成员项 → 加载到表单编辑
+            list.querySelectorAll('.member-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    // 如果点击的是删除按钮或链接，不触发编辑
+                    if (e.target.closest('.del') || e.target.closest('a')) return;
+                    const id = this.dataset.id;
+                    loadMemberToForm(id);
+                });
+            });
+
+            // 删除按钮
             list.querySelectorAll('.del').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
                     const id = this.dataset.id;
                     if (confirm(`确定删除 ${id} 吗？`)) {
+                        if (editingId === id) {
+                            cancelEdit();
+                        }
                         deleteMember(id);
-                        renderList();
                         showToast('已删除');
                     }
                 });
             });
         }
 
+        function updateStats() {
+            document.getElementById('totalCount').textContent = '共 ' + employees.length + ' 人';
+            const active = employees.filter(e => e.status === 1).length;
+            document.getElementById('activeCount').textContent = active;
+            document.getElementById('inactiveCount').textContent = employees.length - active;
+        }
+
         // ================================================================
-        // 表单处理
+        // 编辑功能
+        // ================================================================
+
+        function loadMemberToForm(id) {
+            const member = getMember(id);
+            if (!member) {
+                showToast('⚠️ 未找到该成员');
+                return;
+            }
+
+            editingId = id;
+
+            // 填充表单
+            document.getElementById('inputId').value = member.id;
+            document.getElementById('inputId').disabled = true; // 编辑时禁止修改ID
+            document.getElementById('inputName').value = member.name;
+            document.getElementById('inputTitle').value = member.title;
+            document.getElementById('inputDuty').value = member.duty || '';
+            document.getElementById('inputPhone').value = member.phone || '';
+            document.getElementById('inputEmail').value = member.email || '';
+            document.getElementById('inputAddress').value = member.address || '';
+            document.getElementById('inputStatus').value = member.status;
+
+            // 显示头像和微信码
+            if (member.avatar) {
+                const img = document.getElementById('avatarPreview');
+                img.src = member.avatar;
+                img.style.display = 'block';
+                document.getElementById('clearAvatar').style.display = 'inline-block';
+            }
+            if (member.wechatQr) {
+                const img = document.getElementById('wechatPreview');
+                img.src = member.wechatQr;
+                img.style.display = 'block';
+                document.getElementById('clearWechat').style.display = 'inline-block';
+            }
+
+            // 更新UI
+            document.getElementById('submitBtn').textContent = '✏️ 更新成员';
+            document.getElementById('submitBtn').style.background = '#f57c00';
+            document.getElementById('editModeHint').classList.add('show');
+            document.getElementById('editingName').textContent = member.name;
+            document.getElementById('editingId').textContent = member.id;
+
+            // 高亮列表中的编辑项
+            renderList();
+
+            // 滚动到表单
+            document.querySelector('form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            showToast('✏️ 正在编辑：' + member.name);
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            document.getElementById('inputId').disabled = false;
+            document.getElementById('submitBtn').textContent = '➕ 添加成员';
+            document.getElementById('submitBtn').style.background = '#2e7d32';
+            document.getElementById('editModeHint').classList.remove('show');
+
+            // 不清空表单，方便继续添加
+            renderList();
+        }
+
+        document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
+
+        // ================================================================
+        // 表单提交（添加/更新）
         // ================================================================
 
         document.getElementById('memberForm').addEventListener('submit', function(e) {
@@ -551,8 +1024,19 @@
                 return;
             }
 
+            // 如果是编辑模式，检查ID是否匹配
+            if (editingId && editingId !== id) {
+                showToast('⚠️ 编辑状态下不能修改编号');
+                return;
+            }
+
             const existing = getMember(id);
             const isNew = !existing;
+
+            // 如果是编辑模式，但ID不存在（异常情况）
+            if (editingId && !existing) {
+                cancelEdit();
+            }
 
             const member = {
                 id,
@@ -570,7 +1054,15 @@
             saveMember(member);
             showToast(isNew ? `✅ 已添加 ${name}` : `✅ 已更新 ${name}`);
 
-            // 清空预览
+            // 清空表单
+            document.getElementById('inputId').disabled = false;
+            document.getElementById('inputId').value = '';
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputTitle').value = '';
+            document.getElementById('inputDuty').value = '';
+            document.getElementById('inputPhone').value = '';
+            document.getElementById('inputEmail').value = '';
+            document.getElementById('inputAddress').value = '';
             document.getElementById('avatarPreview').style.display = 'none';
             document.getElementById('avatarPreview').src = '';
             document.getElementById('clearAvatar').style.display = 'none';
@@ -580,16 +1072,12 @@
             document.getElementById('inputAvatar').value = '';
             document.getElementById('inputWechat').value = '';
 
-            if (isNew) {
-                document.getElementById('inputId').value = '';
-                document.getElementById('inputName').value = '';
-                document.getElementById('inputTitle').value = '';
-                document.getElementById('inputDuty').value = '';
-                document.getElementById('inputPhone').value = '';
-                document.getElementById('inputEmail').value = '';
-                document.getElementById('inputAddress').value = '';
-            }
+            document.getElementById('submitBtn').textContent = '➕ 添加成员';
+            document.getElementById('submitBtn').style.background = '#2e7d32';
+            document.getElementById('editModeHint').classList.remove('show');
+            editingId = null;
 
+            updateDataSourceUI('已修改，请导出到仓库', 'local');
             renderList();
         });
 
@@ -640,11 +1128,23 @@
         });
 
         // ================================================================
-        // 导出 / 导入 / 重置
+        // 按钮事件
         // ================================================================
+
+        document.getElementById('syncFromGitHubBtn').addEventListener('click', function() {
+            loadFromGitHub();
+        });
+
+        document.getElementById('exportToGitHubBtn').addEventListener('click', function() {
+            exportToGitHub();
+        });
 
         document.getElementById('exportBtn').addEventListener('click', function() {
             const data = getEmployees();
+            if (data.length === 0) {
+                showToast('⚠️ 没有数据可导出');
+                return;
+            }
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -666,7 +1166,8 @@
                     const data = JSON.parse(ev.target.result);
                     if (Array.isArray(data)) {
                         setEmployees(data);
-                        renderList();
+                        dataSource = 'local';
+                        updateDataSourceUI('✅ 已导入 ' + data.length + ' 条数据', 'local');
                         showToast('导入成功');
                     } else {
                         showToast('格式错误');
@@ -681,11 +1182,29 @@
 
         document.getElementById('resetDataBtn').addEventListener('click', function() {
             if (confirm('重置将恢复默认数据，确定吗？')) {
-                setEmployees(DEFAULT_EMPLOYEES);
+                employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
+                localStorage.setItem(DB_KEY, JSON.stringify(employees));
+                dataSource = 'local';
+                updateDataSourceUI('已重置为默认数据', 'local');
                 renderList();
+                updateStats();
+                updateListCount();
                 showToast('已重置');
             }
         });
+
+        // ================================================================
+        // Loading
+        // ================================================================
+
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text || '加载中...';
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
 
         // ================================================================
         // Toast
@@ -703,9 +1222,36 @@
         // 启动
         // ================================================================
 
-        renderList();
+        async function init() {
+            await loadFromGitHub();
+            if (employees.length === 0) {
+                const stored = localStorage.getItem(DB_KEY);
+                if (stored) {
+                    try {
+                        employees = JSON.parse(stored);
+                        if (employees.length > 0) {
+                            dataSource = 'local';
+                            updateDataSourceUI('使用本地缓存', 'local');
+                            renderList();
+                            updateStats();
+                            updateListCount();
+                            return;
+                        }
+                    } catch (e) {}
+                }
+                employees = JSON.parse(JSON.stringify(DEFAULT_EMPLOYEES));
+                localStorage.setItem(DB_KEY, JSON.stringify(employees));
+                dataSource = 'local';
+                updateDataSourceUI('使用默认数据', 'local');
+                renderList();
+                updateStats();
+                updateListCount();
+            }
+        }
+
+        init();
         console.log('✅ 管理后台已启动');
-        console.log('📌 数据存储 Key:', DB_KEY);
+        console.log('📌 点击成员可编辑');
     </script>
 </body>
 </html>
