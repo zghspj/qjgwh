@@ -290,6 +290,19 @@
             font-size: 12px;
         }
 
+        .env-hint {
+            font-size: 10px;
+            color: #ccc;
+            text-align: center;
+            margin-top: 8px;
+        }
+        .env-hint .online {
+            color: #4caf50;
+        }
+        .env-hint .local {
+            color: #ff9800;
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -387,6 +400,13 @@
             <button class="btn danger" id="clearBtn">🗑️ 清除</button>
         </div>
 
+        <!-- 环境提示 -->
+        <div class="env-hint" id="envHint">
+            🌐 当前环境：<span id="envLabel">加载中...</span>
+            <span style="margin-left:8px;">|</span>
+            BASE_URL：<span id="baseUrlDisplay">-</span>
+        </div>
+
         <div class="tips">
             💡 生成的二维码指向 <code>verify.html?id=编号</code> · 客户扫码即可核验身份
             <br>
@@ -398,11 +418,61 @@
 
     <script>
         // ================================================================
+        // 环境检测 - 自动判断是本地还是线上
+        // ================================================================
+
+        function getBaseUrl() {
+            const host = window.location.host;
+            const pathname = window.location.pathname;
+
+            // 本地开发（127.0.0.1 或 localhost）
+            if (host.includes('127.0.0.1') || host.includes('localhost') || host.includes('192.168.')) {
+                const base = window.location.origin + pathname.replace(/\/[^/]*$/, '');
+                console.log('📌 本地环境，BASE_URL:', base);
+                return base;
+            }
+
+            // GitHub Pages 环境
+            const parts = pathname.split('/').filter(p => p !== '');
+            if (parts.length > 0) {
+                // 有子路径（仓库站点）
+                const repoName = parts[0];
+                const base = window.location.origin + '/' + repoName;
+                console.log('📌 GitHub Pages 仓库环境，BASE_URL:', base);
+                return base;
+            } else {
+                // 用户站点（没有子路径）
+                const base = window.location.origin;
+                console.log('📌 GitHub Pages 用户站点，BASE_URL:', base);
+                return base;
+            }
+        }
+
+        const BASE_URL = getBaseUrl();
+        const isLocal = window.location.host.includes('127.0.0.1') || window.location.host.includes('localhost');
+
+        // 显示环境信息
+        document.addEventListener('DOMContentLoaded', function() {
+            const envLabel = document.getElementById('envLabel');
+            const baseUrlDisplay = document.getElementById('baseUrlDisplay');
+            if (isLocal) {
+                envLabel.textContent = '本地开发';
+                envLabel.className = 'local';
+            } else {
+                envLabel.textContent = '线上部署 (GitHub Pages)';
+                envLabel.className = 'online';
+            }
+            baseUrlDisplay.textContent = BASE_URL;
+        });
+
+        console.log('🌐 当前环境 BASE_URL:', BASE_URL);
+        console.log('📌 完整核验链接示例:', BASE_URL + '/verify.html?id=CCPEFYHDC2026110001');
+
+        // ================================================================
         // 数据层
         // ================================================================
 
         const DB_KEY = 'emp_system_data';
-        const BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
 
         function getEmployees() {
             const stored = localStorage.getItem(DB_KEY);
@@ -412,7 +482,7 @@
                     if (data && data.length > 0) return data;
                 } catch (e) {}
             }
-            // 默认数据（与admin保持一致）
+            // 默认数据
             const defaults = [{
                 id: 'CCPEFYHDC2026110001',
                 name: '庄国辉',
@@ -485,7 +555,7 @@
         }
 
         // ================================================================
-        // 生成二维码
+        // 生成二维码 - 使用 BASE_URL
         // ================================================================
 
         function generateQR(memberId) {
@@ -518,7 +588,7 @@
                 statusBadge.className = 'status-badge inactive';
             }
 
-            // 生成二维码 - 指向 verify.html
+            // 生成二维码 - 使用 BASE_URL 指向 verify.html
             const verifyUrl = BASE_URL + '/verify.html?id=' + member.id;
             document.getElementById('qrLinkLabel').textContent = verifyUrl;
             document.getElementById('linkInput').value = verifyUrl;
@@ -543,6 +613,7 @@
                     correctLevel: QRCode.CorrectLevel.H
                 });
                 showToast('✅ 二维码已生成');
+                console.log('📌 二维码指向:', verifyUrl);
             } catch (e) {
                 showToast('⚠️ 生成失败：' + e.message);
                 qrContainer.textContent = '生成失败，请重试';
@@ -737,6 +808,7 @@
         console.log('✅ 二维码生成器已启动');
         console.log('📌 数据来源:', DB_KEY);
         console.log('📌 核验页面:', BASE_URL + '/verify.html');
+        console.log('📌 环境:', isLocal ? '本地开发' : '线上部署');
     </script>
 </body>
 </html>
