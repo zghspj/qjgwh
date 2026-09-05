@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>身份核验 · 中国林业与环境促进会</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #d0dcd0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 16px;
+        }
+        .container {
+            max-width: 440px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            padding: 30px 24px 24px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #81c784;
+        }
+        .container .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 36px;
+            font-weight: 900;
+            color: rgba(46, 125, 50, 0.05);
+            pointer-events: none;
+            white-space: nowrap;
+            letter-spacing: 6px;
+            width: 200%;
+            text-align: center;
+        }
+        .container .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #2e7d32, #81c784, #c9a84c);
+            border-radius: 28px 28px 0 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 8px 24px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .badge.pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 2px solid #4caf50;
+        }
+        .badge.fail {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #e53935;
+        }
+        .badge.notfound {
+            background: #fff3e0;
+            color: #e65100;
+            border: 2px solid #ff9800;
+        }
+
+        .top-logos {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #c8e6c9;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+        .left-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .left-logo .logo-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+        .left-logo .logo-text .main {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1b5e20;
+            letter-spacing: 1px;
+        }
+        .left-logo .logo-text .sub {
+            font-size: 10px;
+            font-weight: 500;
+            color: #2e7d32;
+            letter-spacing: 0.5px;
+        }
+        .left-logo .logo-text .gold {
+            font-size: 13px;
+            font-weight: 700;
+            color: #c9a84c;
+            letter-spacing: 2px;
+        }
+        .right-logo {
+            text-align: right;
+        }
+        .right-logo .main {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1b5e20;
+            letter-spacing: 1px;
+        }
+        .right-logo .sub {
+            font-size: 9px;
+            font-weight: 400;
+            color: #666;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== 核验标识 - 委员会Logo ===== */
+        .verify-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 12px 20px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #f1f8e9, #e8f5e9);
+            border-radius: 16px;
+            border: 1px solid #a5d6a7;
+            position: relative;
+            z-index: 1;
+        }
+        .verify-brand .brand-logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4caf50;
+            flex-shrink: 0;
+            background: #fff;
+        }
+        .verify-brand .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+        .verify-brand .brand-text .title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1b5e20;
+        }
+        .verify-brand .brand-text .sub {
+            font-size: 12px;
+            color: #2e7d32;
+        }
+        .verify-brand .brand-text .highlight {
+            font-size: 11px;
+            color: #c9a84c;
+            font-weight: 600;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 14px;
+            position: relative;
+            z-index: 1;
+        }
+        .profile .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #4caf50;
+            background: #c8e6c9;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: #2e7d32;
+        }
+        .profile .info {
+            flex: 1;
+        }
+        .profile .info .name {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1b5e20;
+            line-height: 1.2;
+        }
+        .profile .info .title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #2e7d32;
+            margin-top: 2px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+            position: relative;
+            z-index: 1;
+        }
+        .info-row .label {
+            color: #666;
+            flex-shrink: 0;
+        }
+        .info-row .value {
+            color: #1b5e20;
+            font-weight: 500;
+            text-align: right;
+            word-break: break-all;
+        }
+        .info-row .value.duty-text {
+            text-align: left;
+            white-space: pre-wrap;
+            font-size: 13px;
+            line-height: 1.6;
+            font-weight: 400;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .verify-footer {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 2px solid #c8e6c9;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        .verify-footer .org {
+            font-size: 13px;
+            color: #1b5e20;
+            font-weight: 600;
+        }
+        .verify-footer .time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+        .verify-footer .verify-badge {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 16px;
+            background: #e8f5e9;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+        .action-buttons .btn {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            background: #2e7d32;
+            cursor: pointer;
+            transition: 0.2s;
+            min-width: 80px;
+        }
+        .action-buttons .btn:hover {
+            background: #1b5e20;
+        }
+        .action-buttons .btn.outline {
+            background: transparent;
+            color: #2e7d32;
+            border: 2px solid #2e7d32;
+        }
+        .action-buttons .btn.outline:hover {
+            background: #2e7d32;
+            color: #fff;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1b5e20;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 440px) {
+            .container {
+                padding: 20px 16px;
+            }
+            .profile .avatar {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+            .profile .info .name {
+                font-size: 22px;
+            }
+            .badge {
+                font-size: 16px;
+                padding: 6px 18px;
+            }
+            .left-logo .logo-text .main {
+                font-size: 16px;
+            }
+            .left-logo .logo-text .gold {
+                font-size: 11px;
+            }
+            .right-logo .main {
+                font-size: 18px;
+            }
+            .info-row {
+                font-size: 13px;
+                padding: 6px 0;
+            }
+            .action-buttons .btn {
+                font-size: 13px;
+                padding: 8px 0;
+            }
+            .verify-brand {
+                padding: 10px 14px;
+                gap: 10px;
+            }
+            .verify-brand .brand-logo {
+                width: 44px;
+                height: 44px;
+            }
+            .verify-brand .brand-text .title {
+                font-size: 13px;
+            }
+            .verify-brand .brand-text .sub {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container" class="container">
+        <div class="watermark">中国林业与环境促进会</div>
+        <div class="top-bar"></div>
+
+        <!-- 内容由JS渲染 -->
+        <div id="content"></div>
+    </div>
+
+    <div id="toast" class="toast">操作成功</div>
+
+    <script>
+        // ================================================================
+        // 数据层
+        // ================================================================
+
+        const DB_KEY = 'emp_system_data';
+
+        function getEmployees() {
+            const stored = localStorage.getItem(DB_KEY);
+            if (stored) {
+                try {
+                    const data = JSON.parse(stored);
+                    if (data && data.length > 0) return data;
+                } catch (e) {}
+            }
+            const defaults = [{
+                id: 'CCPEFYHDC2026110001',
+                name: '庄国辉',
+                title: '副主任兼办公室主任',
+                duty: '负责健康工作委员会全面事务与统筹协调...',
+                phone: '18520661777',
+                email: 'zjxqab@163.com',
+                address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
+                wechatQr: '',
+                avatar: '',
+                status: 1
+            }, {
+                id: 'CCPEFYHDC2026110002',
+                name: '黄金平',
+                title: '副主任',
+                duty: '负责青少年生态健康项目统筹',
+                phone: '13337819393',
+                email: '2924603747@qq.com',
+                address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
+                wechatQr: '',
+                avatar: '',
+                status: 1
+            }];
+            localStorage.setItem(DB_KEY, JSON.stringify(defaults));
+            return defaults;
+        }
+
+        function getMember(id) {
+            const list = getEmployees();
+            return list.find(e => e.id === id) || null;
+        }
+
+        // ================================================================
+        // 渲染核验页面
+        // ================================================================
+
+        function renderPage() {
+            const content = document.getElementById('content');
+            const params = new URLSearchParams(window.location.search);
+            let id = params.get('id');
+
+            if (!id) {
+                const employees = getEmployees();
+                const active = employees.find(e => e.status === 1);
+                if (active) {
+                    window.history.replaceState({}, '', '?id=' + active.id);
+                    renderPage();
+                    return;
+                }
+                content.innerHTML = `
+                    <div style="text-align:center;padding:40px 0;">
+                        <div style="font-size:48px;margin-bottom:12px;">👥</div>
+                        <div style="font-size:18px;font-weight:600;color:#1b5e20;">暂无在职人员</div>
+                        <p style="color:#888;font-size:14px;margin-top:8px;">请在管理后台添加成员</p>
+                        <div style="margin-top:16px;">
+                            <a href="admin.html" style="color:#2e7d32;font-weight:600;text-decoration:none;border-bottom:2px solid #4caf50;padding-bottom:2px;">前往管理后台 →</a>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const member = getMember(id);
+            if (!member) {
+                content.innerHTML = `
+                    <div style="text-align:center;padding:30px 0;">
+                        <div class="badge notfound">🔍 查无此人</div>
+                        <p style="color:#888;font-size:14px;margin-top:8px;">编号 ${id} 不存在</p>
+                        <div style="margin-top:16px;">
+                            <a href="admin.html" style="color:#2e7d32;font-weight:600;text-decoration:none;border-bottom:2px solid #4caf50;padding-bottom:2px;">前往管理后台 →</a>
+                        </div>
+                    </div>
+                    <div class="verify-footer">
+                        <div class="org">中国林业与环境促进会 · 青少年儿童生态健康发展工作委员会</div>
+                        <div class="time">核验时间：${new Date().toLocaleString('zh-CN')}</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const isActive = member.status === 1;
+            const badgeHtml = isActive ?
+                `<div class="badge pass">✅ 核验通过 · 在职</div>` :
+                `<div class="badge fail">❌ 已离职</div>`;
+
+            let avatarHtml = '';
+            if (member.avatar && member.avatar.startsWith('data:image')) {
+                avatarHtml = `<img src="${member.avatar}" class="avatar" alt="头像">`;
+            } else {
+                avatarHtml = `<div class="avatar">${member.name.charAt(0)}</div>`;
+            }
+
+            // ========== 核验标识 - 使用 ccpef-yhdc.png ==========
+            const verifyBrandHtml = `
+                <div class="verify-brand">
+                    <img src="ccpef-yhdc.png" class="brand-logo" alt="委员会Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="brand-text" style="display:flex; flex-direction:column;">
+                        <span class="title">中国林业与环境促进会</span>
+                        <span class="sub">青少年儿童生态健康发展工作委员会</span>
+                        <span class="highlight">🔒 官方身份核验</span>
+                    </div>
+                </div>
+            `;
+
+            content.innerHTML = `
+                <!-- 顶部Logo -->
+                <div class="top-logos">
+                    <div class="left-logo">
+                        <div class="logo-text">
+                            <span class="main">CCPEF</span>
+                            <span class="sub">YOUTH ECOLOGICAL HEALTH COMMITTEE</span>
+                            <span class="gold">青健工委会</span>
+                        </div>
+                    </div>
+                    <div class="right-logo">
+                        <div class="main">CCPEF.</div>
+                        <div class="sub">CCPEF-YHDC</div>
+                    </div>
+                </div>
+
+                <!-- 核验标识 - 委员会Logo -->
+                ${verifyBrandHtml}
+
+                ${badgeHtml}
+
+                <!-- 个人信息 -->
+                <div class="profile">
+                    ${avatarHtml}
+                    <div class="info">
+                        <div class="name">${member.name}</div>
+                        <div class="title">${member.title || '无职务'}</div>
+                    </div>
+                </div>
+
+                <!-- 详细信息 -->
+                <div class="info-row">
+                    <span class="label">编号</span>
+                    <span class="value">${member.id}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">职务</span>
+                    <span class="value">${member.title || '—'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">职责</span>
+                    <span class="value duty-text">${member.duty || '未设置'}</span>
+                </div>
+                ${member.phone ? `<div class="info-row"><span class="label">电话</span><span class="value">${member.phone}</span></div>` : ''}
+                ${member.email ? `<div class="info-row"><span class="label">邮箱</span><span class="value">${member.email}</span></div>` : ''}
+                ${member.address ? `<div class="info-row"><span class="label">地址</span><span class="value">${member.address}</span></div>` : ''}
+                <div class="info-row" style="border-bottom:none;">
+                    <span class="label">在岗状态</span>
+                    <span class="value" style="color:${isActive ? '#2e7d32' : '#c62828'};">
+                        ${isActive ? '✅ 在职' : '❌ 离职'}
+                    </span>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="action-buttons">
+                    <button class="btn outline" id="backBtn">🔙 返回</button>
+                    <button class="btn" id="viewCardBtn">👁️ 查看名片</button>
+                </div>
+
+                <!-- 底部 -->
+                <div class="verify-footer">
+                    <div class="org">中国林业与环境促进会 · 青少年儿童生态健康发展工作委员会</div>
+                    <div class="time">核验时间：${new Date().toLocaleString('zh-CN')}</div>
+                    <div class="verify-badge">🔒 官方核验 · 信息真实有效</div>
+                </div>
+            `;
+
+            // 绑定按钮事件
+            document.getElementById('backBtn').addEventListener('click', function() {
+                window.history.back();
+            });
+
+            document.getElementById('viewCardBtn').addEventListener('click', function() {
+                const baseUrl = window.location.href.split('?')[0].replace('verify.html', 'card.html');
+                window.open(baseUrl + '?id=' + member.id, '_blank');
+            });
+        }
+
+        // ================================================================
+        // Toast
+        // ================================================================
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        // ================================================================
+        // 启动
+        // ================================================================
+
+        renderPage();
+        window.addEventListener('popstate', renderPage);
+        console.log('✅ 核验页面已启动');
+    </script>
+</body>
+</html>

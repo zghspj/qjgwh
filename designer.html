@@ -1,0 +1,2206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>名片设计器</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js">
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            user-select: none;
+        }
+        body {
+            background: #e8f0e8;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .top-toolbar {
+            background: #fff;
+            padding: 10px 20px;
+            border-bottom: 2px solid #c8e6c9;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            z-index: 50;
+        }
+        .top-toolbar .title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1b5e20;
+        }
+        .top-toolbar select {
+            padding: 6px 14px;
+            border: 1px solid #c8e6c9;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #f9fbf9;
+            min-width: 180px;
+        }
+        .top-toolbar .btn-sm {
+            background: #2e7d32;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .top-toolbar .btn-sm:hover {
+            background: #1b5e20;
+        }
+        .top-toolbar .btn-sm.danger {
+            background: #c62828;
+        }
+        .top-toolbar .btn-sm.danger:hover {
+            background: #b71c1c;
+        }
+        .top-toolbar .btn-sm.outline {
+            background: transparent;
+            color: #2e7d32;
+            border: 2px solid #2e7d32;
+        }
+        .top-toolbar .btn-sm.outline:hover {
+            background: #2e7d32;
+            color: #fff;
+        }
+        .top-toolbar .member-status {
+            font-size: 13px;
+            color: #555;
+            margin-left: auto;
+        }
+        .top-toolbar .refresh-btn {
+            background: #1976d2;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .top-toolbar .refresh-btn:hover {
+            background: #0d47a1;
+        }
+
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 240px;
+            background: #fff;
+            padding: 12px;
+            border-right: 2px solid #c8e6c9;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+            flex-shrink: 0;
+            height: 100%;
+        }
+        .sidebar h3 {
+            font-size: 13px;
+            color: #1b5e20;
+            border-bottom: 1px solid #c8e6c9;
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+        }
+        .element-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .element-item {
+            background: #f1f8e9;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #a5d6a7;
+            cursor: grab;
+            font-size: 12px;
+            color: #2e7d32;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .element-item:hover {
+            background: #c8e6c9;
+        }
+        .upload-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .upload-btn {
+            background: #2e7d32;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            flex: 1;
+        }
+        .upload-btn:hover {
+            background: #1b5e20;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin: 4px 0;
+        }
+        .palette .color-swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .palette .color-swatch:hover {
+            transform: scale(1.1);
+        }
+        .props-panel {
+            border-top: 1px solid #c8e6c9;
+            padding-top: 6px;
+            margin-top: auto;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+        .props-panel .prop-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 3px;
+            flex-wrap: wrap;
+        }
+        .props-panel .prop-row label {
+            font-size: 11px;
+            color: #444;
+            min-width: 24px;
+        }
+        .props-panel .prop-row input[type="color"] {
+            width: 26px;
+            height: 26px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 2px;
+        }
+        .props-panel .prop-row input[type="range"] {
+            width: 70px;
+            accent-color: #2e7d32;
+        }
+        .props-panel .prop-row .range-val {
+            font-size: 11px;
+            color: #2e7d32;
+            font-weight: 600;
+            min-width: 24px;
+        }
+        .props-panel .prop-row select {
+            padding: 2px 4px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 11px;
+        }
+        .props-panel .btn-sm {
+            background: #2e7d32;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 10px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .props-panel .btn-sm:hover {
+            background: #1b5e20;
+        }
+        .props-panel .btn-sm.danger {
+            background: #c62828;
+        }
+        .props-panel .btn-sm.danger:hover {
+            background: #b71c1c;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #d0dcd0;
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+        }
+        .canvas {
+            width: 420px;
+            min-height: 600px;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            position: relative;
+            padding: 24px 20px 16px;
+            border: 2px solid #81c784;
+            flex-shrink: 0;
+        }
+        .canvas .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 36px;
+            font-weight: 900;
+            color: rgba(46, 125, 50, 0.06);
+            pointer-events: none;
+            white-space: nowrap;
+            letter-spacing: 6px;
+            width: 200%;
+            text-align: center;
+        }
+        .canvas .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #2e7d32, #81c784, #c9a84c);
+            border-radius: 28px 28px 0 0;
+        }
+        .drag-element {
+            position: absolute;
+            cursor: move;
+            padding: 4px;
+            border-radius: 6px;
+            border: 2px dashed transparent;
+            transition: border 0.2s, box-shadow 0.2s;
+            background: transparent;
+            min-width: 10px;
+            min-height: 10px;
+            z-index: 1;
+            pointer-events: auto;
+            box-sizing: border-box;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2px;
+        }
+        .drag-element:hover {
+            border-color: #4caf50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+        .drag-element.selected {
+            border-color: #c9a84c;
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.4);
+            z-index: 2;
+        }
+        .drag-element .remove-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #c62828;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 11px;
+            line-height: 18px;
+            text-align: center;
+            cursor: pointer;
+            display: none;
+            z-index: 10;
+        }
+        .drag-element.selected .remove-btn {
+            display: block;
+        }
+        .transform-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #c9a84c;
+            border: 1px solid #fff;
+            border-radius: 50%;
+            display: none;
+            z-index: 20;
+            pointer-events: auto;
+        }
+        .drag-element.selected .transform-handle {
+            display: block;
+        }
+        .handle-tl {
+            top: -5px;
+            left: -5px;
+            cursor: nw-resize;
+        }
+        .handle-tr {
+            top: -5px;
+            right: -5px;
+            cursor: ne-resize;
+        }
+        .handle-bl {
+            bottom: -5px;
+            left: -5px;
+            cursor: sw-resize;
+        }
+        .handle-br {
+            bottom: -5px;
+            right: -5px;
+            cursor: se-resize;
+        }
+        .handle-t {
+            top: -5px;
+            left: 50%;
+            margin-left: -5px;
+            cursor: n-resize;
+        }
+        .handle-b {
+            bottom: -5px;
+            left: 50%;
+            margin-left: -5px;
+            cursor: s-resize;
+        }
+        .handle-l {
+            top: 50%;
+            left: -5px;
+            margin-top: -5px;
+            cursor: w-resize;
+        }
+        .handle-r {
+            top: 50%;
+            right: -5px;
+            margin-top: -5px;
+            cursor: e-resize;
+        }
+        .drag-element img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1b5e20;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 800px) {
+            .sidebar {
+                width: 180px;
+                padding: 8px;
+            }
+            .canvas {
+                transform: scale(0.75);
+                transform-origin: center center;
+            }
+        }
+        @media (max-width: 600px) {
+            .main {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: 180px;
+                border-right: none;
+                border-bottom: 2px solid #c8e6c9;
+                flex-direction: row;
+                flex-wrap: wrap;
+                align-content: flex-start;
+                gap: 4px;
+                padding: 6px;
+                overflow-y: auto;
+            }
+            .sidebar h3 {
+                width: 100%;
+                margin-bottom: 2px;
+                font-size: 12px;
+            }
+            .element-list {
+                flex-wrap: wrap;
+            }
+            .element-item {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+            .props-panel {
+                display: none;
+            }
+            .canvas-wrapper {
+                padding: 10px;
+            }
+            .canvas {
+                transform: scale(0.55);
+                transform-origin: top center;
+            }
+            .top-toolbar {
+                padding: 6px 12px;
+                gap: 6px;
+            }
+            .top-toolbar select {
+                min-width: 120px;
+                font-size: 12px;
+                padding: 4px 10px;
+            }
+            .top-toolbar .btn-sm {
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+            .top-toolbar .title {
+                font-size: 15px;
+            }
+            .top-toolbar .member-status {
+                font-size: 11px;
+            }
+            .top-toolbar .refresh-btn {
+                font-size: 10px;
+                padding: 4px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部工具栏 -->
+    <div class="top-toolbar">
+        <span class="title">🎨 名片设计器</span>
+        <label>选择人员：</label>
+        <select id="memberSelector">
+            <option value="">-- 加载中 --</option>
+        </select>
+        <button class="btn-sm" id="saveDesignBtn">💾 保存</button>
+        <button class="btn-sm outline" id="previewBtn">👁️ 预览</button>
+        <button class="btn-sm danger" id="resetDesignBtn">↩️ 重置</button>
+        <button class="refresh-btn" id="refreshBtn">🔄 刷新数据</button>
+        <span class="member-status" id="memberStatus">未选择</span>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="main">
+        <!-- 左侧面板 -->
+        <div class="sidebar">
+            <h3>🧩 元素面板</h3>
+            <div class="element-list" id="elementList">
+                <div class="element-item" data-type="logo-left" draggable="true">🏷️ 委员会Logo</div>
+                <div class="element-item" data-type="logo-right" draggable="true">🏷️ 总会Logo</div>
+                <div class="element-item" data-type="image" draggable="true">🖼️ 图片</div>
+                <div class="element-item" data-type="text" draggable="true">📝 文字</div>
+                <div class="element-item" data-type="name" draggable="true">📛 姓名</div>
+                <div class="element-item" data-type="title" draggable="true">💼 职务</div>
+                <div class="element-item" data-type="id" draggable="true">🔢 编号</div>
+                <div class="element-item" data-type="duty" draggable="true">📋 职责</div>
+                <div class="element-item" data-type="status-badge" draggable="true">🟢 在岗状态</div>
+                <div class="element-item" data-type="org" draggable="true">🏛️ 单位</div>
+                <div class="element-item" data-type="phone" draggable="true">📞 电话</div>
+                <div class="element-item" data-type="email" draggable="true">✉️ 邮箱</div>
+                <div class="element-item" data-type="address" draggable="true">📍 地址</div>
+                <div class="element-item" data-type="wechat" draggable="true">📱 微信码</div>
+                <div class="element-item" data-type="qr" draggable="true">🔲 核验码</div>
+                <div class="element-item" data-type="slogan" draggable="true">🌍 口号</div>
+                <div class="element-item" data-type="line" draggable="true">─ 装饰线</div>
+                <div class="element-item" data-type="shape-rect" draggable="true">▭ 长方形</div>
+                <div class="element-item" data-type="shape-square" draggable="true">▢ 正方形</div>
+                <div class="element-item" data-type="shape-triangle" draggable="true">△ 三角形</div>
+                <div class="element-item" data-type="shape-diamond" draggable="true">◇ 菱形</div>
+                <div class="element-item" data-type="shape-heart" draggable="true">♥ 心形</div>
+                <div class="element-item" data-type="shape-star" draggable="true">★ 五角星</div>
+                <div class="element-item" data-type="shape-circle" draggable="true">◯ 圆形</div>
+                <div class="element-item" data-type="shape-ellipse" draggable="true">⬮ 椭圆</div>
+                <div class="element-item" data-type="divider" draggable="true">─ 分割线</div>
+            </div>
+
+            <h3>📤 上传图片</h3>
+            <div class="upload-group">
+                <button class="upload-btn" id="uploadImageBtn">🖼️ 上传图片</button>
+                <input type="file" id="imageFileInput" accept="image/*">
+                <button class="upload-btn" id="uploadWechatBtn">📱 上传微信码</button>
+                <input type="file" id="wechatFileInput" accept="image/*">
+            </div>
+
+            <h3>🎨 调色板</h3>
+            <div class="palette" id="palette">
+                <div class="color-swatch" style="background:#1b5e20;" data-color="#1b5e20"></div>
+                <div class="color-swatch" style="background:#2e7d32;" data-color="#2e7d32"></div>
+                <div class="color-swatch" style="background:#4caf50;" data-color="#4caf50"></div>
+                <div class="color-swatch" style="background:#81c784;" data-color="#81c784"></div>
+                <div class="color-swatch" style="background:#c8e6c9;" data-color="#c8e6c9"></div>
+                <div class="color-swatch" style="background:#c9a84c;" data-color="#c9a84c"></div>
+                <div class="color-swatch" style="background:#f44336;" data-color="#f44336"></div>
+                <div class="color-swatch" style="background:#e91e63;" data-color="#e91e63"></div>
+                <div class="color-swatch" style="background:#9c27b0;" data-color="#9c27b0"></div>
+                <div class="color-swatch" style="background:#2196f3;" data-color="#2196f3"></div>
+                <div class="color-swatch" style="background:#ff9800;" data-color="#ff9800"></div>
+                <div class="color-swatch" style="background:#ffffff; border:1px solid #aaa;" data-color="#ffffff"></div>
+            </div>
+
+            <!-- 属性面板 -->
+            <div class="props-panel" id="propsPanel">
+                <h3 style="font-size:12px; margin-bottom:3px;">🎛️ 属性</h3>
+                <div class="prop-row">
+                    <label>左</label>
+                    <input type="range" id="propLeft" min="0" max="400" value="20" step="1">
+                    <span class="range-val" id="propLeftVal">20</span>
+                </div>
+                <div class="prop-row">
+                    <label>顶</label>
+                    <input type="range" id="propTop" min="0" max="600" value="20" step="1">
+                    <span class="range-val" id="propTopVal">20</span>
+                </div>
+                <div class="prop-row">
+                    <label>宽</label>
+                    <input type="range" id="propWidth" min="10" max="400" value="100" step="1">
+                    <span class="range-val" id="propWidthVal">100</span>
+                </div>
+                <div class="prop-row">
+                    <label>高</label>
+                    <input type="range" id="propHeight" min="10" max="400" value="40" step="1">
+                    <span class="range-val" id="propHeightVal">40</span>
+                </div>
+                <div class="prop-row">
+                    <label>颜色</label>
+                    <input type="color" id="propColor" value="#1b5e20">
+                </div>
+                <div class="prop-row">
+                    <label>背景</label>
+                    <input type="color" id="propBg" value="#ffffff">
+                </div>
+                <div class="prop-row">
+                    <label>边框</label>
+                    <select id="propBorder">
+                        <option value="none">无</option>
+                        <option value="solid 2px #4caf50">实线</option>
+                        <option value="dashed 2px #4caf50">虚线</option>
+                        <option value="dotted 2px #4caf50">点线</option>
+                    </select>
+                </div>
+                <div class="prop-row">
+                    <label>圆角</label>
+                    <input type="range" id="propRadius" min="0" max="50" value="8" step="1">
+                    <span class="range-val" id="propRadiusVal">8</span>
+                </div>
+                <div class="prop-row">
+                    <label>字号</label>
+                    <input type="range" id="propFontSize" min="8" max="72" value="14" step="1">
+                    <span class="range-val" id="propFontSizeVal">14</span>
+                </div>
+                <div class="prop-row">
+                    <label>字体</label>
+                    <select id="propFontFamily">
+                        <option value="'PingFang SC','Microsoft YaHei',sans-serif">默认</option>
+                        <option value="Arial, sans-serif">Arial</option>
+                        <option value="'Times New Roman', serif">Times</option>
+                        <option value="Georgia, serif">Georgia</option>
+                        <option value="'Courier New', monospace">Courier</option>
+                        <option value="'Comic Sans MS', cursive">Comic Sans</option>
+                        <option value="'Impact', sans-serif">Impact</option>
+                    </select>
+                </div>
+                <div class="prop-row">
+                    <label>对齐</label>
+                    <select id="propTextAlign">
+                        <option value="center">居中</option>
+                        <option value="left">左对齐</option>
+                        <option value="right">右对齐</option>
+                    </select>
+                </div>
+                <div class="prop-row">
+                    <label>粗细</label>
+                    <select id="propFontWeight">
+                        <option value="normal">常规</option>
+                        <option value="bold">加粗</option>
+                        <option value="lighter">细体</option>
+                    </select>
+                </div>
+                <div class="prop-row" style="flex-wrap:wrap; gap:3px;">
+                    <button class="btn-sm" id="deleteElementBtn">🗑️ 删除</button>
+                    <button class="btn-sm" id="duplicateElementBtn">📋 复制</button>
+                    <button class="btn-sm" id="moveUpBtn">⬆ 上移</button>
+                    <button class="btn-sm" id="moveDownBtn">⬇ 下移</button>
+                </div>
+                <div class="prop-row">
+                    <button class="btn-sm" id="editTextBtn" style="display:none;">✏️ 编辑文字</button>
+                </div>
+                <div class="prop-row">
+                    <button class="btn-sm" id="uploadLogoBtn" style="display:none;">🖼️ 更换Logo</button>
+                    <input type="file" id="logoFileInput" accept="image/*" style="display:none;">
+                </div>
+                <div style="font-size:10px; color:#888; margin-top:2px;" id="logoHint">💡 双击Logo可上传图片</div>
+            </div>
+        </div>
+
+        <!-- 画布 -->
+        <div class="canvas-wrapper">
+            <div class="canvas" id="canvas">
+                <div class="watermark">中国林业与环境促进会</div>
+                <div class="top-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">操作成功</div>
+
+    <script>
+        // ================================================================
+        // 数据层 - 与 admin.html 使用完全相同的 KEY 和数据结构
+        // ================================================================
+
+        // 重要：与 admin.html 保持完全一致
+        const DB_KEY = 'emp_system_data';
+        const LAYOUT_PREFIX = 'designer_layout_';
+        const BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
+
+        // 默认成员数据（与 admin.html 完全一致）
+        const DEFAULT_EMPLOYEES = [{
+            id: 'CCPEFYHDC2026110001',
+            name: '庄国辉',
+            title: '副主任兼办公室主任',
+            duty: '负责健康工作委员会全面事务与统筹协调。具体包括：主持办公室全面工作，统筹协调各内设机构日常运转；负责秘书处日常工作，承担文秘、会务、机要、档案等综合管理；协调各副主任委员分管工作，督办重要会议事项落实；负责人事、财务、资产、后勤等行政事务管理；负责会员管理、对外联络与来访接待工作。',
+            phone: '18520661777',
+            email: 'zjxqab@163.com',
+            address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
+            wechatQr: '',
+            avatar: '',
+            status: 1
+        }, {
+            id: 'CCPEFYHDC2026110002',
+            name: '黄金平',
+            title: '副主任',
+            duty: '负责青少年生态健康项目统筹',
+            phone: '13337819393',
+            email: '2924603747@qq.com',
+            address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
+            wechatQr: '',
+            avatar: '',
+            status: 1
+        }];
+
+        // ================================================================
+        // 核心数据函数 - 与 admin.html 使用完全相同的实现
+        // ================================================================
+
+        function getEmployees() {
+            try {
+                const stored = localStorage.getItem(DB_KEY);
+                console.log('📌 从 localStorage 读取数据, key:', DB_KEY);
+                console.log('📌 原始数据:', stored);
+
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        console.log('✅ 成功读取数据，共', data.length, '人');
+                        return data;
+                    }
+                }
+            } catch (e) {
+                console.error('❌ 读取数据失败:', e);
+            }
+
+            // 没有数据时初始化默认数据
+            console.log('📌 初始化默认数据');
+            localStorage.setItem(DB_KEY, JSON.stringify(DEFAULT_EMPLOYEES));
+            return DEFAULT_EMPLOYEES;
+        }
+
+        function getMember(id) {
+            const list = getEmployees();
+            return list.find(e => e.id === id) || null;
+        }
+
+        function getDesign(memberId) {
+            const key = LAYOUT_PREFIX + memberId;
+            try {
+                const stored = localStorage.getItem(key);
+                if (stored) {
+                    return JSON.parse(stored);
+                }
+            } catch (e) {
+                console.warn('⚠️ 读取设计失败:', e);
+            }
+            return null;
+        }
+
+        function saveDesign(memberId, data) {
+            const key = LAYOUT_PREFIX + memberId;
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+                console.log('✅ 设计已保存:', key);
+                return true;
+            } catch (e) {
+                console.error('❌ 保存设计失败:', e);
+                return false;
+            }
+        }
+
+        // ================================================================
+        // 状态
+        // ================================================================
+
+        let elements = [];
+        let selectedId = null;
+        let nextId = 1;
+        let currentMemberId = null;
+        let isDragging = false;
+        let dragTarget = null;
+        let dragOffsetX = 0,
+            dragOffsetY = 0;
+        let isResizing = false;
+        let resizeTarget = null;
+        let resizeHandle = null;
+        let resizeStartX = 0,
+            resizeStartY = 0;
+        let resizeStartW = 0,
+            resizeStartH = 0;
+        let resizeStartL = 0,
+            resizeStartT = 0;
+        const canvasEl = document.getElementById('canvas');
+
+        // ================================================================
+        // 默认布局
+        // ================================================================
+
+        function getDefaultLayout(member) {
+            const name = member ? member.name : '姓名';
+            const title = member ? member.title : '职务';
+            const id = member ? member.id : '编号';
+            const duty = member ? member.duty : '职责描述';
+            const phone = member ? member.phone : '电话';
+            const email = member ? member.email : '邮箱';
+            const address = member ? member.address : '地址';
+
+            return [{
+                id: 1,
+                type: 'logo-left',
+                left: 20,
+                top: 20,
+                width: 120,
+                height: 60,
+                color: '#1b5e20',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 0,
+                imageData: null,
+                placeholder: '委员会Logo'
+            }, {
+                id: 2,
+                type: 'logo-right',
+                left: 280,
+                top: 20,
+                width: 100,
+                height: 50,
+                color: '#1b5e20',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 0,
+                imageData: null,
+                placeholder: '总会Logo'
+            }, {
+                id: 3,
+                type: 'image',
+                left: 20,
+                top: 100,
+                width: 80,
+                height: 80,
+                color: '#2e7d32',
+                bg: '#ffffff',
+                border: 'solid 3px #81c784',
+                radius: 50,
+                fontSize: 0,
+                imageData: null,
+                placeholder: '头像'
+            }, {
+                id: 4,
+                type: 'name',
+                left: 120,
+                top: 100,
+                width: 220,
+                height: 40,
+                color: '#1b5e20',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 28,
+                content: name,
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'left',
+                fontWeight: 'bold'
+            }, {
+                id: 5,
+                type: 'title',
+                left: 120,
+                top: 140,
+                width: 220,
+                height: 30,
+                color: '#2e7d32',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 18,
+                content: title,
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'left',
+                fontWeight: 'normal'
+            }, {
+                id: 6,
+                type: 'id',
+                left: 120,
+                top: 170,
+                width: 250,
+                height: 26,
+                color: '#555',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 14,
+                content: '编号：' + id,
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'left',
+                fontWeight: 'normal'
+            }, {
+                id: 7,
+                type: 'duty',
+                left: 20,
+                top: 210,
+                width: 380,
+                height: 80,
+                color: '#1b5e20',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 13,
+                content: '职责：' + duty,
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'left',
+                fontWeight: 'normal'
+            }, {
+                id: 8,
+                type: 'status-badge',
+                left: 20,
+                top: 300,
+                width: 100,
+                height: 34,
+                color: '#2e7d32',
+                bg: '#e8f5e9',
+                border: 'solid 2px #4caf50',
+                radius: 20,
+                fontSize: 15,
+                content: '✅ 在职',
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'center',
+                fontWeight: 'bold'
+            }, {
+                id: 9,
+                type: 'org',
+                left: 20,
+                top: 350,
+                width: 380,
+                height: 60,
+                color: '#1b5e20',
+                bg: '#f1f8e9',
+                border: 'none',
+                radius: 14,
+                fontSize: 13,
+                content: '中国林业与环境促进会\n青少年儿童生态健康发展工作委员会',
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'left',
+                fontWeight: 'bold'
+            }, {
+                id: 10,
+                type: 'phone',
+                left: 20,
+                top: 430,
+                width: 200,
+                height: 28,
+                color: '#1b5e20',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 14,
+                content: '📞 ' + phone,
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'left',
+                fontWeight: 'normal'
+            }, {
+                id: 11,
+                type: 'email',
+                left: 20,
+                top: 465,
+                width: 250,
+                height: 28,
+                color: '#1b5e20',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 14,
+                content: '✉️ ' + email,
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'left',
+                fontWeight: 'normal'
+            }, {
+                id: 12,
+                type: 'address',
+                left: 20,
+                top: 500,
+                width: 380,
+                height: 36,
+                color: '#1b5e20',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 12,
+                content: '📍 ' + address,
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'left',
+                fontWeight: 'normal'
+            }, {
+                id: 13,
+                type: 'slogan',
+                left: 20,
+                top: 550,
+                width: 200,
+                height: 28,
+                color: '#2e7d32',
+                bg: 'transparent',
+                border: 'none',
+                radius: 0,
+                fontSize: 15,
+                content: '🌍 绿色未来·健康童年',
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'left',
+                fontWeight: 'bold'
+            }, {
+                id: 14,
+                type: 'qr',
+                left: 320,
+                top: 540,
+                width: 70,
+                height: 70,
+                color: '#2e7d32',
+                bg: '#ffffff',
+                border: 'solid 1px #c8e6c9',
+                radius: 8,
+                fontSize: 0,
+                content: 'QR_PLACEHOLDER'
+            }];
+        }
+
+        // ================================================================
+        // 图片压缩
+        // ================================================================
+
+        function compressImage(file, maxWidth = 300, quality = 0.8) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxWidth) {
+                            height = height * (maxWidth / width);
+                            width = maxWidth;
+                        }
+                        if (height > maxWidth) {
+                            width = width * (maxWidth / height);
+                            height = maxWidth;
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, width, height);
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(dataUrl);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ================================================================
+        // 渲染引擎
+        // ================================================================
+
+        function buildElementContent(data, member) {
+            const wrapper = document.createElement('div');
+            wrapper.style.width = '100%';
+            wrapper.style.height = '100%';
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.justifyContent = 'center';
+            wrapper.style.flexWrap = 'wrap';
+            wrapper.style.gap = '4px';
+            wrapper.style.overflow = 'visible';
+            wrapper.style.overflowWrap = 'break-word';
+            wrapper.style.wordBreak = 'break-word';
+            wrapper.style.lineHeight = '1.2';
+
+            switch (data.type) {
+                case 'logo-left':
+                case 'logo-right': {
+                    const isLeft = data.type === 'logo-left';
+                    if (data.imageData) {
+                        const img = document.createElement('img');
+                        img.src = data.imageData;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        wrapper.appendChild(img);
+                    } else {
+                        wrapper.textContent = isLeft ? '委员会Logo' : '总会Logo';
+                        wrapper.style.fontSize = '14px';
+                        wrapper.style.color = '#888';
+                        wrapper.style.fontWeight = 'bold';
+                    }
+                    break;
+                }
+                case 'image': {
+                    if (data.imageData) {
+                        const img = document.createElement('img');
+                        img.src = data.imageData;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        if (data.placeholder === '头像') {
+                            img.style.borderRadius = '50%';
+                            img.style.objectFit = 'cover';
+                        }
+                        wrapper.appendChild(img);
+                    } else if (data.placeholder === '头像' && member && member.avatar) {
+                        const img = document.createElement('img');
+                        img.src = member.avatar;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '50%';
+                        wrapper.appendChild(img);
+                    } else {
+                        wrapper.textContent = data.placeholder || '图片';
+                        wrapper.style.fontSize = '12px';
+                        wrapper.style.color = '#888';
+                    }
+                    break;
+                }
+                case 'text': {
+                    const td = document.createElement('div');
+                    td.className = 'text-content';
+                    td.textContent = data.content || '文字';
+                    td.style.fontSize = data.fontSize + 'px';
+                    td.style.color = data.color || '#1b5e20';
+                    td.style.fontWeight = data.fontWeight || 'normal';
+                    td.style.fontFamily = data.fontFamily || 'inherit';
+                    td.style.textAlign = data.textAlign || 'center';
+                    wrapper.appendChild(td);
+                    break;
+                }
+                case 'name': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.fontWeight = data.fontWeight || 'bold';
+                    sp.style.color = data.color || '#1b5e20';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    sp.textContent = data.content || (member ? member.name : '姓名');
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'title': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.fontWeight = data.fontWeight || 'normal';
+                    sp.style.color = data.color || '#2e7d32';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    sp.textContent = data.content || (member ? member.title : '职务');
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'id': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.color = data.color || '#555';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    sp.textContent = data.content || (member ? '编号：' + member.id : '编号：000');
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'duty': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.color = data.color || '#1b5e20';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    sp.textContent = data.content || (member ? '职责：' + member.duty : '职责：未设置');
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'status-badge': {
+                    const isActive = member?.status === 1;
+                    const badge = document.createElement('span');
+                    badge.style.fontSize = data.fontSize + 'px';
+                    badge.style.fontWeight = 'bold';
+                    badge.style.color = isActive ? '#2e7d32' : '#c62828';
+                    badge.style.backgroundColor = isActive ? '#e8f5e9' : '#ffebee';
+                    badge.style.padding = '4px 16px';
+                    badge.style.borderRadius = '30px';
+                    badge.style.border = isActive ? '2px solid #4caf50' : '2px solid #e53935';
+                    badge.textContent = isActive ? '✅ 在职' : '❌ 离职';
+                    wrapper.appendChild(badge);
+                    break;
+                }
+                case 'org': {
+                    const lines = (data.content || '').split('\n');
+                    const block = document.createElement('div');
+                    block.style.width = '100%';
+                    block.style.height = '100%';
+                    block.style.display = 'flex';
+                    block.style.flexDirection = 'column';
+                    block.style.justifyContent = 'center';
+                    block.style.padding = '8px 12px';
+                    block.style.borderRadius = data.radius + 'px';
+                    block.style.backgroundColor = data.bg || '#f1f8e9';
+                    block.style.borderLeft = '5px solid #4caf50';
+                    const l1 = document.createElement('div');
+                    l1.style.fontWeight = 'bold';
+                    l1.style.color = data.color || '#1b5e20';
+                    l1.style.fontSize = data.fontSize + 'px';
+                    l1.textContent = lines[0] || '单位名称';
+                    block.appendChild(l1);
+                    if (lines[1]) {
+                        const l2 = document.createElement('div');
+                        l2.style.fontWeight = 'normal';
+                        l2.style.color = data.color || '#2e7d32';
+                        l2.style.fontSize = (data.fontSize * 0.9) + 'px';
+                        l2.textContent = lines[1];
+                        block.appendChild(l2);
+                    }
+                    wrapper.appendChild(block);
+                    break;
+                }
+                case 'phone':
+                case 'email':
+                case 'address':
+                case 'slogan': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.color = data.color || '#1b5e20';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    if (data.type === 'slogan') sp.style.fontWeight = 'bold';
+                    sp.textContent = data.content || '';
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'wechat': {
+                    if (member && member.wechatQr) {
+                        const img = document.createElement('img');
+                        img.src = member.wechatQr;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        wrapper.appendChild(img);
+                    } else if (data.imageData) {
+                        const img = document.createElement('img');
+                        img.src = data.imageData;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        wrapper.appendChild(img);
+                    } else {
+                        const ph = document.createElement('div');
+                        ph.style.width = '100%';
+                        ph.style.height = '100%';
+                        ph.style.borderRadius = data.radius + 'px';
+                        ph.style.background = data.bg || '#e8f5e9';
+                        ph.style.border = '1px dashed #81c784';
+                        ph.style.display = 'flex';
+                        ph.style.alignItems = 'center';
+                        ph.style.justifyContent = 'center';
+                        ph.textContent = '微信码';
+                        wrapper.appendChild(ph);
+                    }
+                    break;
+                }
+                case 'qr': {
+                    const box = document.createElement('div');
+                    box.className = 'qr-box';
+                    box.style.width = '100%';
+                    box.style.height = '100%';
+                    box.style.borderRadius = data.radius + 'px';
+                    box.style.background = data.bg || '#ffffff';
+                    box.style.border = data.border || '1px solid #c8e6c9';
+                    box.style.display = 'flex';
+                    box.style.alignItems = 'center';
+                    box.style.justifyContent = 'center';
+                    box.textContent = 'QR';
+                    wrapper.appendChild(box);
+                    break;
+                }
+                case 'line': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', '100%');
+                    svg.setAttribute('height', '100%');
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', '0');
+                    line.setAttribute('y1', '0');
+                    line.setAttribute('x2', '100%');
+                    line.setAttribute('y2', '0');
+                    line.setAttribute('stroke', data.color || '#333');
+                    line.setAttribute('stroke-width', data.lineWidth || '2');
+                    svg.appendChild(line);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-rect': {
+                    wrapper.style.background = data.bg || '#4caf50';
+                    wrapper.style.border = data.border || 'none';
+                    break;
+                }
+                case 'shape-square': {
+                    wrapper.style.background = data.bg || '#4caf50';
+                    wrapper.style.border = data.border || 'none';
+                    break;
+                }
+                case 'shape-triangle': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    svg.style.width = '100%';
+                    svg.style.height = '100%';
+                    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    poly.setAttribute('points', '50,0 0,100 100,100');
+                    poly.setAttribute('fill', data.bg || '#4caf50');
+                    if (data.border && data.border !== 'none') {
+                        const parts = data.border.split(' ');
+                        if (parts.length >= 2) { poly.setAttribute('stroke', parts[2] || '#333');
+                            poly.setAttribute('stroke-width', parts[1] || '2'); }
+                    }
+                    svg.appendChild(poly);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-diamond': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    svg.style.width = '100%';
+                    svg.style.height = '100%';
+                    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    poly.setAttribute('points', '50,0 100,50 50,100 0,50');
+                    poly.setAttribute('fill', data.bg || '#4caf50');
+                    if (data.border && data.border !== 'none') {
+                        const parts = data.border.split(' ');
+                        if (parts.length >= 2) { poly.setAttribute('stroke', parts[2] || '#333');
+                            poly.setAttribute('stroke-width', parts[1] || '2'); }
+                    }
+                    svg.appendChild(poly);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-heart': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    svg.style.width = '100%';
+                    svg.style.height = '100%';
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d',
+                        'M50,90 C20,60 0,40 0,25 C0,10 15,0 30,0 C40,0 46,5 50,12 C54,5 60,0 70,0 C85,0 100,10 100,25 C100,40 80,60 50,90Z'
+                        );
+                    path.setAttribute('fill', data.bg || '#e91e63');
+                    if (data.border && data.border !== 'none') {
+                        const parts = data.border.split(' ');
+                        if (parts.length >= 2) { path.setAttribute('stroke', parts[2] || '#333');
+                            path.setAttribute('stroke-width', parts[1] || '2'); }
+                    }
+                    svg.appendChild(path);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-star': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    svg.style.width = '100%';
+                    svg.style.height = '100%';
+                    const pts = [];
+                    const cx = 50,
+                        cy = 50,
+                        outer = 45,
+                        inner = 18;
+                    for (let i = 0; i < 10; i++) {
+                        const r = i % 2 === 0 ? outer : inner;
+                        const angle = (i * 36 - 90) * Math.PI / 180;
+                        pts.push(cx + r * Math.cos(angle));
+                        pts.push(cy + r * Math.sin(angle));
+                    }
+                    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    poly.setAttribute('points', pts.join(','));
+                    poly.setAttribute('fill', data.bg || '#ff9800');
+                    if (data.border && data.border !== 'none') {
+                        const parts = data.border.split(' ');
+                        if (parts.length >= 2) { poly.setAttribute('stroke', parts[2] || '#333');
+                            poly.setAttribute('stroke-width', parts[1] || '2'); }
+                    }
+                    svg.appendChild(poly);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-circle': {
+                    wrapper.style.background = data.bg || '#4caf50';
+                    wrapper.style.border = data.border || 'none';
+                    wrapper.style.borderRadius = '50%';
+                    break;
+                }
+                case 'shape-ellipse': {
+                    wrapper.style.background = data.bg || '#4caf50';
+                    wrapper.style.border = data.border || 'none';
+                    wrapper.style.borderRadius = '50%';
+                    break;
+                }
+                case 'divider':
+                    wrapper.style.borderBottom = data.border || 'solid 2px #c8e6c9';
+                    wrapper.style.background = 'transparent';
+                    wrapper.style.height = '2px';
+                    break;
+                default:
+                    wrapper.textContent = data.content || '元素';
+            }
+            return wrapper;
+        }
+
+        function renderElements() {
+            canvasEl.querySelectorAll('.drag-element').forEach(el => el.remove());
+            const sorted = [...elements].sort((a, b) => a.id - b.id);
+            sorted.forEach(el => {
+                const dom = createElementDOM(el);
+                canvasEl.appendChild(dom);
+            });
+            updatePropsPanel();
+            if (selectedId) {
+                const dom = canvasEl.querySelector(`.drag-element[data-id="${selectedId}"]`);
+                if (dom) dom.classList.add('selected');
+            }
+        }
+
+        function createElementDOM(data) {
+            const div = document.createElement('div');
+            div.className = 'drag-element';
+            div.dataset.id = data.id;
+            div.style.left = data.left + 'px';
+            div.style.top = data.top + 'px';
+            div.style.width = data.width + 'px';
+            div.style.height = data.height + 'px';
+            div.style.color = data.color || '#1b5e20';
+            div.style.backgroundColor = data.bg || 'transparent';
+            div.style.border = data.border || 'none';
+            div.style.borderRadius = data.radius + 'px';
+            div.style.fontSize = data.fontSize + 'px';
+            if (data.fontFamily) div.style.fontFamily = data.fontFamily;
+            if (data.textAlign) div.style.textAlign = data.textAlign;
+            if (data.fontWeight) div.style.fontWeight = data.fontWeight;
+            div.style.position = 'absolute';
+            div.style.cursor = 'move';
+            div.style.padding = '4px';
+            div.style.overflow = 'hidden';
+            div.style.boxSizing = 'border-box';
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.justifyContent = 'center';
+            div.style.flexWrap = 'wrap';
+            div.style.gap = '4px';
+
+            const member = currentMemberId ? getMember(currentMemberId) : null;
+            const content = buildElementContent(data, member);
+            div.appendChild(content);
+
+            // 变换手柄
+            ['tl', 'tr', 'bl', 'br', 't', 'b', 'l', 'r'].forEach(h => {
+                const handle = document.createElement('div');
+                handle.className = 'transform-handle handle-' + h;
+                handle.dataset.handle = h;
+                handle.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    startResize(e, data.id, h);
+                });
+                div.appendChild(handle);
+            });
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-btn';
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                deleteElement(data.id);
+            });
+            div.appendChild(removeBtn);
+
+            div.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.remove-btn') || e.target.closest('.transform-handle')) return;
+                selectElement(data.id);
+                if (!e.target.closest('.remove-btn') && !e.target.closest('.transform-handle')) {
+                    startDrag(e, data.id);
+                }
+            });
+
+            // 双击编辑文字
+            const textTypes = ['text', 'name', 'title', 'id', 'duty', 'org', 'slogan', 'phone', 'email', 'address'];
+            if (textTypes.includes(data.type)) {
+                div.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    const newContent = prompt('编辑文字内容（多行用\\n分隔）:', data.content);
+                    if (newContent !== null) {
+                        data.content = newContent;
+                        if (currentMemberId) saveDesign(currentMemberId, elements);
+                        renderElements();
+                        selectElement(data.id);
+                        showToast('文字已更新');
+                    }
+                });
+            }
+
+            // Logo双击上传
+            if (data.type === 'logo-left' || data.type === 'logo-right') {
+                div.addEventListener('dblclick', function(e) {
+                    e.stopPropagation();
+                    document.getElementById('logoFileInput').click();
+                });
+            }
+
+            return div;
+        }
+
+        // ================================================================
+        // 拖拽与变换
+        // ================================================================
+
+        function startDrag(e, id) {
+            const el = elements.find(el => el.id === id);
+            if (!el) return;
+            const rect = canvasEl.getBoundingClientRect();
+            const scaleX = 420 / rect.width;
+            const scaleY = 600 / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            dragOffsetX = mouseX - el.left;
+            dragOffsetY = mouseY - el.top;
+            isDragging = true;
+            dragTarget = id;
+            canvasEl.style.cursor = 'grabbing';
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+        }
+
+        function onDragMove(e) {
+            if (!isDragging || dragTarget === null) return;
+            const rect = canvasEl.getBoundingClientRect();
+            const scaleX = 420 / rect.width;
+            const scaleY = 600 / rect.height;
+            let mx = (e.clientX - rect.left) * scaleX;
+            let my = (e.clientY - rect.top) * scaleY;
+            mx = Math.max(0, Math.min(420, mx));
+            my = Math.max(0, Math.min(600, my));
+            const el = elements.find(el => el.id === dragTarget);
+            if (!el) return;
+            el.left = Math.round(mx - dragOffsetX);
+            el.top = Math.round(my - dragOffsetY);
+            el.left = Math.max(0, Math.min(420 - el.width, el.left));
+            el.top = Math.max(0, Math.min(600 - el.height, el.top));
+            const dom = canvasEl.querySelector(`.drag-element[data-id="${dragTarget}"]`);
+            if (dom) { dom.style.left = el.left + 'px';
+                dom.style.top = el.top + 'px'; }
+            updatePropsPanel();
+        }
+
+        function onDragEnd() {
+            isDragging = false;
+            dragTarget = null;
+            canvasEl.style.cursor = 'default';
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+        }
+
+        function startResize(e, id, handle) {
+            const el = elements.find(el => el.id === id);
+            if (!el) return;
+            const rect = canvasEl.getBoundingClientRect();
+            const scaleX = 420 / rect.width;
+            const scaleY = 600 / rect.height;
+            resizeStartX = (e.clientX - rect.left) * scaleX;
+            resizeStartY = (e.clientY - rect.top) * scaleY;
+            resizeStartW = el.width;
+            resizeStartH = el.height;
+            resizeStartL = el.left;
+            resizeStartT = el.top;
+            resizeTarget = id;
+            resizeHandle = handle;
+            isResizing = true;
+            document.addEventListener('mousemove', onResizeMove);
+            document.addEventListener('mouseup', onResizeEnd);
+            e.stopPropagation();
+        }
+
+        function onResizeMove(e) {
+            if (!isResizing || resizeTarget === null) return;
+            const rect = canvasEl.getBoundingClientRect();
+            const scaleX = 420 / rect.width;
+            const scaleY = 600 / rect.height;
+            let mx = (e.clientX - rect.left) * scaleX;
+            let my = (e.clientY - rect.top) * scaleY;
+            mx = Math.max(0, Math.min(420, mx));
+            my = Math.max(0, Math.min(600, my));
+            const el = elements.find(el => el.id === resizeTarget);
+            if (!el) return;
+            let dx = mx - resizeStartX,
+                dy = my - resizeStartY;
+            let newL = resizeStartL,
+                newT = resizeStartT,
+                newW = resizeStartW,
+                newH = resizeStartH;
+            const h = resizeHandle;
+            if (h.includes('r')) { newW = Math.max(10, resizeStartW + dx); }
+            if (h.includes('l')) { newW = Math.max(10, resizeStartW - dx);
+                newL = resizeStartL + resizeStartW - newW; }
+            if (h.includes('b')) { newH = Math.max(10, resizeStartH + dy); }
+            if (h.includes('t')) { newH = Math.max(10, resizeStartH - dy);
+                newT = resizeStartT + resizeStartH - newH; }
+            newW = Math.max(10, newW);
+            newH = Math.max(10, newH);
+            newL = Math.max(0, Math.min(420 - newW, newL));
+            newT = Math.max(0, Math.min(600 - newH, newT));
+            el.left = Math.round(newL);
+            el.top = Math.round(newT);
+            el.width = Math.round(newW);
+            el.height = Math.round(newH);
+            const dom = canvasEl.querySelector(`.drag-element[data-id="${resizeTarget}"]`);
+            if (dom) { dom.style.left = el.left + 'px';
+                dom.style.top = el.top + 'px';
+                dom.style.width = el.width + 'px';
+                dom.style.height = el.height + 'px'; }
+            updatePropsPanel();
+        }
+
+        function onResizeEnd() {
+            isResizing = false;
+            resizeTarget = null;
+            resizeHandle = null;
+            document.removeEventListener('mousemove', onResizeMove);
+            document.removeEventListener('mouseup', onResizeEnd);
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+        }
+
+        // ================================================================
+        // 选择与属性面板
+        // ================================================================
+
+        function selectElement(id) {
+            selectedId = id;
+            canvasEl.querySelectorAll('.drag-element').forEach(el => el.classList.remove('selected'));
+            const dom = canvasEl.querySelector(`.drag-element[data-id="${id}"]`);
+            if (dom) dom.classList.add('selected');
+            updatePropsPanel();
+
+            const el = elements.find(e => e.id === id);
+            const editBtn = document.getElementById('editTextBtn');
+            const textTypes = ['text', 'name', 'title', 'id', 'duty', 'org', 'slogan', 'phone', 'email', 'address'];
+            if (el && textTypes.includes(el.type)) {
+                editBtn.style.display = 'inline-block';
+                editBtn.onclick = () => {
+                    const newContent = prompt('编辑文字内容（多行用\\n分隔）:', el.content);
+                    if (newContent !== null) {
+                        el.content = newContent;
+                        if (currentMemberId) saveDesign(currentMemberId, elements);
+                        renderElements();
+                        selectElement(id);
+                        showToast('文字已更新');
+                    }
+                };
+            } else {
+                editBtn.style.display = 'none';
+            }
+
+            const logoUploadBtn = document.getElementById('uploadLogoBtn');
+            if (el && (el.type === 'logo-left' || el.type === 'logo-right')) {
+                logoUploadBtn.style.display = 'inline-block';
+                logoUploadBtn.onclick = function() { document.getElementById('logoFileInput').click(); };
+            } else {
+                logoUploadBtn.style.display = 'none';
+            }
+        }
+
+        function updatePropsPanel() {
+            const el = elements.find(e => e.id === selectedId);
+            if (!el) { document.getElementById('propsPanel').style.opacity = '0.4'; return; }
+            document.getElementById('propsPanel').style.opacity = '1';
+            document.getElementById('propLeft').value = el.left;
+            document.getElementById('propLeftVal').textContent = el.left;
+            document.getElementById('propTop').value = el.top;
+            document.getElementById('propTopVal').textContent = el.top;
+            document.getElementById('propWidth').value = el.width;
+            document.getElementById('propWidthVal').textContent = el.width;
+            document.getElementById('propHeight').value = el.height;
+            document.getElementById('propHeightVal').textContent = el.height;
+            document.getElementById('propColor').value = el.color || '#1b5e20';
+            document.getElementById('propBg').value = el.bg || '#ffffff';
+            document.getElementById('propBorder').value = el.border || 'none';
+            document.getElementById('propRadius').value = el.radius || 0;
+            document.getElementById('propRadiusVal').textContent = el.radius || 0;
+            document.getElementById('propFontSize').value = el.fontSize || 14;
+            document.getElementById('propFontSizeVal').textContent = el.fontSize || 14;
+            document.getElementById('propFontFamily').value = el.fontFamily || "'PingFang SC','Microsoft YaHei',sans-serif";
+            document.getElementById('propTextAlign').value = el.textAlign || 'center';
+            document.getElementById('propFontWeight').value = el.fontWeight || 'normal';
+        }
+
+        // 属性控件绑定
+        ['propLeft', 'propTop', 'propWidth', 'propHeight', 'propRadius', 'propFontSize'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function() {
+                const val = parseInt(this.value);
+                document.getElementById(id + 'Val').textContent = val;
+                const el = elements.find(e => e.id === selectedId);
+                if (!el) return;
+                const map = { propLeft: 'left', propTop: 'top', propWidth: 'width', propHeight: 'height',
+                    propRadius: 'radius', propFontSize: 'fontSize' };
+                el[map[id]] = val;
+                const dom = canvasEl.querySelector(`.drag-element[data-id="${selectedId}"]`);
+                if (dom) {
+                    if (id === 'propLeft' || id === 'propTop' || id === 'propWidth' || id === 'propHeight') {
+                        dom.style[id.replace('prop', '').toLowerCase()] = val + 'px';
+                    } else if (id === 'propRadius') {
+                        dom.style.borderRadius = val + 'px';
+                    } else if (id === 'propFontSize') {
+                        dom.style.fontSize = val + 'px';
+                        dom.querySelectorAll('span, div').forEach(t => t.style.fontSize = val + 'px');
+                    }
+                }
+                if (currentMemberId) saveDesign(currentMemberId, elements);
+            });
+        });
+
+        document.getElementById('propColor').addEventListener('input', function() {
+            const el = elements.find(e => e.id === selectedId);
+            if (!el) return;
+            el.color = this.value;
+            const dom = canvasEl.querySelector(`.drag-element[data-id="${selectedId}"]`);
+            if (dom) {
+                dom.style.color = this.value;
+                dom.querySelectorAll('span, div').forEach(t => t.style.color = this.value);
+            }
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+        });
+
+        document.getElementById('propBg').addEventListener('input', function() {
+            const el = elements.find(e => e.id === selectedId);
+            if (!el) return;
+            el.bg = this.value;
+            const dom = canvasEl.querySelector(`.drag-element[data-id="${selectedId}"]`);
+            if (dom) {
+                dom.style.backgroundColor = this.value;
+                const svg = dom.querySelector('svg');
+                if (svg) {
+                    const path = svg.querySelector('polygon, path');
+                    if (path) path.setAttribute('fill', this.value);
+                }
+            }
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+        });
+
+        document.getElementById('propBorder').addEventListener('change', function() {
+            const el = elements.find(e => e.id === selectedId);
+            if (!el) return;
+            el.border = this.value;
+            const dom = canvasEl.querySelector(`.drag-element[data-id="${selectedId}"]`);
+            if (dom) {
+                dom.style.border = this.value;
+                const svg = dom.querySelector('svg');
+                if (svg) {
+                    const path = svg.querySelector('polygon, path');
+                    if (path) {
+                        if (this.value === 'none') { path.setAttribute('stroke', 'none'); } else {
+                            const parts = this.value.split(' ');
+                            if (parts.length >= 2) { path.setAttribute('stroke', parts[2] || '#333');
+                                path.setAttribute('stroke-width', parts[1] || '2'); }
+                        }
+                    }
+                }
+            }
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+        });
+
+        document.getElementById('propFontFamily').addEventListener('change', function() {
+            const el = elements.find(e => e.id === selectedId);
+            if (!el) return;
+            el.fontFamily = this.value;
+            const dom = canvasEl.querySelector(`.drag-element[data-id="${selectedId}"]`);
+            if (dom) { dom.style.fontFamily = this.value;
+                dom.querySelectorAll('span, div').forEach(t => t.style.fontFamily = this.value); }
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+        });
+
+        document.getElementById('propTextAlign').addEventListener('change', function() {
+            const el = elements.find(e => e.id === selectedId);
+            if (!el) return;
+            el.textAlign = this.value;
+            const dom = canvasEl.querySelector(`.drag-element[data-id="${selectedId}"]`);
+            if (dom) { dom.style.textAlign = this.value;
+                dom.querySelectorAll('span, div').forEach(t => t.style.textAlign = this.value); }
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+        });
+
+        document.getElementById('propFontWeight').addEventListener('change', function() {
+            const el = elements.find(e => e.id === selectedId);
+            if (!el) return;
+            el.fontWeight = this.value;
+            const dom = canvasEl.querySelector(`.drag-element[data-id="${selectedId}"]`);
+            if (dom) { dom.style.fontWeight = this.value;
+                dom.querySelectorAll('span, div').forEach(t => t.style.fontWeight = this.value); }
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+        });
+
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', function() {
+                const color = this.dataset.color;
+                const el = elements.find(e => e.id === selectedId);
+                if (!el) return;
+                el.color = color;
+                const dom = canvasEl.querySelector(`.drag-element[data-id="${selectedId}"]`);
+                if (dom) {
+                    dom.style.color = color;
+                    dom.querySelectorAll('span, div').forEach(t => t.style.color = color);
+                }
+                document.getElementById('propColor').value = color;
+                if (currentMemberId) saveDesign(currentMemberId, elements);
+            });
+        });
+
+        document.getElementById('moveUpBtn').addEventListener('click', function() {
+            const idx = elements.findIndex(e => e.id === selectedId);
+            if (idx === -1 || idx === 0) return;
+            [elements[idx], elements[idx - 1]] = [elements[idx - 1], elements[idx]];
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+            renderElements();
+            selectElement(selectedId);
+        });
+
+        document.getElementById('moveDownBtn').addEventListener('click', function() {
+            const idx = elements.findIndex(e => e.id === selectedId);
+            if (idx === -1 || idx === elements.length - 1) return;
+            [elements[idx], elements[idx + 1]] = [elements[idx + 1], elements[idx]];
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+            renderElements();
+            selectElement(selectedId);
+        });
+
+        document.getElementById('deleteElementBtn').addEventListener('click', function() {
+            if (selectedId !== null) deleteElement(selectedId);
+        });
+
+        document.getElementById('duplicateElementBtn').addEventListener('click', function() {
+            const el = elements.find(e => e.id === selectedId);
+            if (!el) return;
+            const newEl = JSON.parse(JSON.stringify(el));
+            newEl.id = nextId++;
+            newEl.left += 10;
+            newEl.top += 10;
+            elements.push(newEl);
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+            renderElements();
+            selectElement(newEl.id);
+            showToast('已复制');
+        });
+
+        function deleteElement(id) {
+            if (!confirm('删除该元素？')) return;
+            elements = elements.filter(e => e.id !== id);
+            if (selectedId === id) selectedId = null;
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+            renderElements();
+            showToast('已删除');
+        }
+
+        // ================================================================
+        // 图片上传
+        // ================================================================
+
+        async function addImageElement(file, placeholder, defaultWidth = 100, defaultHeight = 100) {
+            try {
+                const compressedDataUrl = await compressImage(file, 300, 0.8);
+                const newEl = {
+                    id: nextId++,
+                    type: 'image',
+                    left: 50,
+                    top: 50,
+                    width: defaultWidth,
+                    height: defaultHeight,
+                    color: '#1b5e20',
+                    bg: '#ffffff',
+                    border: 'solid 1px #c8e6c9',
+                    radius: 8,
+                    fontSize: 0,
+                    imageData: compressedDataUrl,
+                    placeholder: placeholder || '图片'
+                };
+                elements.push(newEl);
+                if (currentMemberId) saveDesign(currentMemberId, elements);
+                renderElements();
+                selectElement(newEl.id);
+                showToast('✅ 图片已添加');
+            } catch (err) {
+                showToast('⚠️ 图片处理失败');
+                console.error(err);
+            }
+        }
+
+        async function uploadLogo(file) {
+            try {
+                const compressedDataUrl = await compressImage(file, 300, 0.8);
+                const el = elements.find(e => e.id === selectedId);
+                if (el && (el.type === 'logo-left' || el.type === 'logo-right')) {
+                    el.imageData = compressedDataUrl;
+                    if (currentMemberId) saveDesign(currentMemberId, elements);
+                    renderElements();
+                    selectElement(el.id);
+                    showToast('✅ Logo已更新');
+                } else {
+                    showToast('⚠️ 请先选中一个 Logo 元素');
+                }
+            } catch (err) {
+                showToast('⚠️ Logo处理失败');
+                console.error(err);
+            }
+        }
+
+        document.getElementById('imageFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('⚠️ 请上传图片文件');
+                this.value = '';
+                return;
+            }
+            addImageElement(file, '图片');
+            this.value = '';
+        });
+
+        document.getElementById('wechatFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('⚠️ 请上传图片文件');
+                this.value = '';
+                return;
+            }
+            addImageElement(file, '微信码', 100, 100);
+            this.value = '';
+        });
+
+        document.getElementById('logoFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('⚠️ 请上传图片文件');
+                this.value = '';
+                return;
+            }
+            uploadLogo(file);
+            this.value = '';
+        });
+
+        document.getElementById('uploadImageBtn').addEventListener('click', function() {
+            document.getElementById('imageFileInput').click();
+        });
+
+        document.getElementById('uploadWechatBtn').addEventListener('click', function() {
+            document.getElementById('wechatFileInput').click();
+        });
+
+        // ================================================================
+        // 拖拽添加元素
+        // ================================================================
+
+        document.querySelectorAll('.element-item').forEach(item => {
+            item.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('type', this.dataset.type);
+            });
+        });
+
+        canvasEl.addEventListener('dragover', e => e.preventDefault());
+
+        canvasEl.addEventListener('drop', function(e) {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('type');
+            if (!type) return;
+            const rect = canvasEl.getBoundingClientRect();
+            const scaleX = 420 / rect.width;
+            const scaleY = 600 / rect.height;
+            let x = (e.clientX - rect.left) * scaleX;
+            let y = (e.clientY - rect.top) * scaleY;
+            x = Math.max(10, Math.min(410, x));
+            y = Math.max(10, Math.min(590, y));
+
+            const newEl = {
+                id: nextId++,
+                type: type,
+                left: Math.round(x - 60),
+                top: Math.round(y - 30),
+                width: 120,
+                height: 40,
+                color: '#1b5e20',
+                bg: '#ffffff',
+                border: 'none',
+                radius: 8,
+                fontSize: 14,
+                content: '',
+                fontFamily: "'PingFang SC','Microsoft YaHei',sans-serif",
+                textAlign: 'center',
+                fontWeight: 'normal',
+                imageData: null,
+                lineWidth: 2
+            };
+
+            const config = {
+                'logo-left': { w: 100, h: 60, bg: 'transparent', border: 'none', radius: 0, fontSize: 0,
+                    content: '', placeholder: '委员会Logo' },
+                'logo-right': { w: 80, h: 50, bg: 'transparent', border: 'none', radius: 0, fontSize: 0,
+                    content: '', placeholder: '总会Logo' },
+                text: { w: 150, h: 50, fontSize: 18, content: '文字内容' },
+                name: { w: 150, h: 40, fontSize: 28, content: '姓名', textAlign: 'left', fontWeight: 'bold' },
+                title: { w: 150, h: 30, fontSize: 18, content: '职务', textAlign: 'left' },
+                id: { w: 180, h: 30, fontSize: 14, content: '编号：CCPEFYHDC2026110001', textAlign: 'left' },
+                duty: { w: 300, h: 50, fontSize: 13, content: '职责：项目统筹', textAlign: 'left' },
+                'status-badge': { w: 100, h: 34, fontSize: 15, content: '✅ 在职', textAlign: 'center',
+                    fontWeight: 'bold', bg: '#e8f5e9', border: 'solid 2px #4caf50', radius: 20 },
+                org: { w: 300, h: 60, bg: '#f1f8e9', radius: 14, fontSize: 14, content: '单位名称\n第二行',
+                    textAlign: 'left', fontWeight: 'bold' },
+                phone: { w: 180, h: 30, fontSize: 14, content: '📞 电话', textAlign: 'left' },
+                email: { w: 200, h: 30, fontSize: 14, content: '✉️ 邮箱', textAlign: 'left' },
+                address: { w: 300, h: 40, fontSize: 13, content: '📍 地址', textAlign: 'left' },
+                wechat: { w: 80, h: 80, bg: '#e8f5e9', border: '1px dashed #81c784', radius: 8, fontSize: 0,
+                    content: '' },
+                qr: { w: 80, h: 80, bg: '#ffffff', border: 'solid 1px #c8e6c9', radius: 8, fontSize: 0,
+                    content: 'QR_PLACEHOLDER' },
+                slogan: { w: 180, h: 30, fontSize: 16, content: '🌍 口号', textAlign: 'left', fontWeight: 'bold' },
+                line: { w: 120, h: 20, color: '#333', border: 'none', radius: 0, fontSize: 0, content: '',
+                    lineWidth: 2 },
+                'shape-rect': { w: 100, h: 70, bg: '#4caf50', border: 'solid 2px #2e7d32', radius: 0,
+                    fontSize: 0, content: '' },
+                'shape-square': { w: 80, h: 80, bg: '#4caf50', border: 'solid 2px #2e7d32', radius: 0,
+                    fontSize: 0, content: '' },
+                'shape-triangle': { w: 100, h: 90, bg: '#4caf50', border: 'solid 2px #2e7d32', radius: 0,
+                    fontSize: 0, content: '' },
+                'shape-diamond': { w: 80, h: 80, bg: '#4caf50', border: 'solid 2px #2e7d32', radius: 0,
+                    fontSize: 0, content: '' },
+                'shape-heart': { w: 80, h: 80, bg: '#e91e63', border: 'solid 2px #c62828', radius: 0,
+                    fontSize: 0, content: '' },
+                'shape-star': { w: 80, h: 80, bg: '#ff9800', border: 'solid 2px #e65100', radius: 0,
+                    fontSize: 0, content: '' },
+                'shape-circle': { w: 80, h: 80, bg: '#4caf50', border: 'solid 2px #2e7d32', radius: 50,
+                    fontSize: 0, content: '' },
+                'shape-ellipse': { w: 100, h: 60, bg: '#4caf50', border: 'solid 2px #2e7d32', radius: 50,
+                    fontSize: 0, content: '' },
+                divider: { w: 200, h: 2, border: 'solid 2px #c8e6c9', bg: 'transparent', radius: 0, fontSize: 0,
+                    content: '' }
+            };
+
+            const cfg = config[type];
+            if (cfg) Object.assign(newEl, cfg);
+            if (type === 'image') {
+                newEl.width = 100;
+                newEl.height = 100;
+                newEl.imageData = null;
+                newEl.placeholder = '图片';
+                newEl.bg = '#ffffff';
+                newEl.border = 'solid 1px #c8e6c9';
+            }
+
+            elements.push(newEl);
+            if (currentMemberId) saveDesign(currentMemberId, elements);
+            renderElements();
+            selectElement(newEl.id);
+            showToast('✅ 已添加 ' + type);
+        });
+
+        // ================================================================
+        // 人员选择与加载
+        // ================================================================
+
+        function populateMemberSelector() {
+            const sel = document.getElementById('memberSelector');
+            const employees = getEmployees();
+
+            console.log('📌 populateMemberSelector, 员工数量:', employees.length);
+
+            sel.innerHTML = '';
+            if (employees.length === 0) {
+                sel.innerHTML = '<option value="">-- 无成员，请在后台添加 --</option>';
+                document.getElementById('memberStatus').textContent = '无成员';
+                return;
+            }
+
+            employees.forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = emp.name + ' (' + emp.id.slice(-6) + ')' + (emp.status === 1 ? ' ✅' : ' ❌');
+                sel.appendChild(opt);
+            });
+
+            // 检查URL参数
+            const params = new URLSearchParams(window.location.search);
+            const idParam = params.get('id');
+
+            let targetId = idParam;
+            if (!targetId) {
+                // 默认选第一个在职成员
+                const active = employees.find(e => e.status === 1);
+                if (active) targetId = active.id;
+                else targetId = employees[0]?.id;
+            }
+
+            if (targetId && employees.some(e => e.id === targetId)) {
+                sel.value = targetId;
+                loadMember(targetId);
+            } else if (employees.length > 0) {
+                sel.value = employees[0].id;
+                loadMember(employees[0].id);
+            }
+        }
+
+        function loadMember(memberId) {
+            const member = getMember(memberId);
+            if (!member) {
+                showToast('⚠️ 未找到该成员');
+                return;
+            }
+
+            currentMemberId = memberId;
+            document.getElementById('memberStatus').textContent = '当前：' + member.name;
+
+            // 加载设计
+            const design = getDesign(memberId);
+            if (design && design.length > 0) {
+                elements = design;
+                nextId = elements.reduce((max, e) => Math.max(max, e.id), 0) + 1;
+                renderElements();
+                showToast('✅ 已加载 ' + member.name + ' 的设计');
+            } else {
+                // 没有设计，创建默认
+                elements = getDefaultLayout(member);
+                nextId = elements.reduce((max, e) => Math.max(max, e.id), 0) + 1;
+                renderElements();
+                // 自动保存
+                saveDesign(memberId, elements);
+                showToast('✅ 已创建 ' + member.name + ' 的默认设计');
+            }
+        }
+
+        document.getElementById('memberSelector').addEventListener('change', function() {
+            const id = this.value;
+            if (id) {
+                loadMember(id);
+                // 更新URL参数
+                const url = new URL(window.location);
+                url.searchParams.set('id', id);
+                window.history.replaceState({}, '', url);
+            }
+        });
+
+        // ================================================================
+        // 工具栏按钮
+        // ================================================================
+
+        document.getElementById('saveDesignBtn').addEventListener('click', function() {
+            if (currentMemberId) {
+                const success = saveDesign(currentMemberId, elements);
+                showToast(success ? '✅ 已保存' : '❌ 保存失败');
+            } else {
+                showToast('⚠️ 请先选择成员');
+            }
+        });
+
+        document.getElementById('previewBtn').addEventListener('click', function() {
+            if (currentMemberId) {
+                saveDesign(currentMemberId, elements);
+                window.open(BASE_URL + '/card.html?id=' + currentMemberId, '_blank');
+            } else {
+                showToast('⚠️ 请先选择成员');
+            }
+        });
+
+        document.getElementById('resetDesignBtn').addEventListener('click', function() {
+            if (!currentMemberId) { showToast('⚠️ 请先选择成员'); return; }
+            if (confirm('确定要重置 ' + currentMemberId + ' 的设计吗？')) {
+                const member = getMember(currentMemberId);
+                elements = getDefaultLayout(member);
+                nextId = elements.reduce((max, e) => Math.max(max, e.id), 0) + 1;
+                renderElements();
+                saveDesign(currentMemberId, elements);
+                showToast('✅ 已重置');
+            }
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            // 强制刷新数据
+            localStorage.removeItem(DB_KEY);
+            const employees = getEmployees();
+            populateMemberSelector();
+            showToast('✅ 已刷新数据，共 ' + employees.length + ' 人');
+        });
+
+        // ================================================================
+        // Toast
+        // ================================================================
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        // ================================================================
+        // 启动
+        // ================================================================
+
+        console.log('🚀 名片设计器启动...');
+        console.log('📌 DB_KEY:', DB_KEY);
+
+        // 先检查localStorage中的数据
+        const rawData = localStorage.getItem(DB_KEY);
+        console.log('📌 localStorage原始数据:', rawData);
+
+        populateMemberSelector();
+        console.log('✅ 名片设计器已启动');
+    </script>
+</body>
+</html>

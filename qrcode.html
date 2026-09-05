@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>核验二维码生成器</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js">
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background: #e8f5e9;
+            display: flex;
+            justify-content: center;
+            padding: 30px 16px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 520px;
+            width: 100%;
+            background: #fff;
+            border-radius: 28px;
+            padding: 28px 24px;
+            box-shadow: 0 8px 30px rgba(46, 125, 50, 0.15);
+            border: 1px solid #a5d6a7;
+        }
+        h1 {
+            font-size: 24px;
+            color: #1b5e20;
+            border-left: 6px solid #4caf50;
+            padding-left: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #888;
+        }
+        .selector-wrap {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        .selector-wrap select {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #c8e6c9;
+            border-radius: 12px;
+            font-size: 14px;
+            background: #f9fbf9;
+            min-width: 150px;
+        }
+        .selector-wrap .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            background: #2e7d32;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .selector-wrap .btn:hover {
+            background: #1b5e20;
+        }
+        .member-info {
+            background: #f1f8e9;
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .member-info .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4caf50;
+            background: #c8e6c9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #2e7d32;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .member-info .detail .name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1b5e20;
+        }
+        .member-info .detail .title {
+            font-size: 14px;
+            color: #2e7d32;
+        }
+        .member-info .detail .id {
+            font-size: 12px;
+            color: #888;
+        }
+        .member-info .status-badge {
+            margin-left: auto;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .member-info .status-badge.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+        .member-info .status-badge.inactive {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #e53935;
+        }
+
+        .qr-section {
+            text-align: center;
+            padding: 24px 0;
+            border-top: 2px solid #e8f5e9;
+            border-bottom: 2px solid #e8f5e9;
+            margin-bottom: 20px;
+        }
+        .qr-section .qr-wrapper {
+            display: inline-block;
+            padding: 20px;
+            background: #fff;
+            border-radius: 16px;
+            border: 2px solid #c8e6c9;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+        .qr-section .qr-wrapper #qrcode {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qr-section .qr-wrapper #qrcode canvas {
+            max-width: 200px;
+            height: auto !important;
+        }
+        .qr-section .qr-label {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #888;
+        }
+        .qr-section .qr-label strong {
+            color: #1b5e20;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn-group .btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 0;
+            border: none;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            background: #2e7d32;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-group .btn:hover {
+            background: #1b5e20;
+        }
+        .btn-group .btn.outline {
+            background: transparent;
+            color: #2e7d32;
+            border: 2px solid #2e7d32;
+        }
+        .btn-group .btn.outline:hover {
+            background: #2e7d32;
+            color: #fff;
+        }
+        .btn-group .btn.danger {
+            background: #c62828;
+        }
+        .btn-group .btn.danger:hover {
+            background: #b71c1c;
+        }
+
+        .size-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 0;
+            justify-content: center;
+        }
+        .size-control label {
+            font-size: 13px;
+            color: #555;
+        }
+        .size-control input[type="range"] {
+            width: 140px;
+            accent-color: #2e7d32;
+        }
+        .size-control .size-val {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2e7d32;
+            min-width: 36px;
+        }
+
+        .link-box {
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .link-box input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 13px;
+            color: #333;
+            outline: none;
+            min-width: 100px;
+            font-family: monospace;
+        }
+        .link-box .copy-btn {
+            padding: 4px 14px;
+            border: none;
+            border-radius: 6px;
+            background: #2e7d32;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .link-box .copy-btn:hover {
+            background: #1b5e20;
+        }
+
+        .toast {
+            background: #1b5e20;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+            bottom: 40px;
+        }
+
+        .tips {
+            font-size: 12px;
+            color: #999;
+            margin-top: 16px;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .tips code {
+            background: #f1f8e9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #1b5e20;
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 16px;
+            }
+            .member-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .member-info .status-badge {
+                margin-left: 0;
+            }
+            .btn-group .btn {
+                min-width: 80px;
+                font-size: 13px;
+                padding: 10px 0;
+            }
+            .selector-wrap {
+                flex-direction: column;
+            }
+            .selector-wrap select {
+                width: 100%;
+            }
+            .qr-section .qr-wrapper #qrcode canvas {
+                max-width: 160px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>
+            📱 核验二维码
+            <small>生成器</small>
+        </h1>
+
+        <!-- 选择人员 -->
+        <div class="selector-wrap">
+            <select id="memberSelect">
+                <option value="">-- 请选择成员 --</option>
+            </select>
+            <button class="btn" id="generateBtn">生成二维码</button>
+        </div>
+
+        <!-- 成员信息 -->
+        <div id="memberInfo" class="member-info" style="display:none;">
+            <div class="avatar" id="infoAvatar">庄</div>
+            <div class="detail">
+                <div class="name" id="infoName">庄国辉</div>
+                <div class="title" id="infoTitle">副主任</div>
+                <div class="id" id="infoId">编号：CCPEFYHDC2026110001</div>
+            </div>
+            <span class="status-badge active" id="infoStatus">✅ 在职</span>
+        </div>
+
+        <!-- 二维码 -->
+        <div class="qr-section" id="qrSection" style="display:none;">
+            <div class="qr-wrapper">
+                <div id="qrcode"></div>
+            </div>
+            <div class="qr-label">
+                🔗 核验链接：<strong id="qrLinkLabel">loading...</strong>
+            </div>
+        </div>
+
+        <!-- 链接 -->
+        <div class="link-box" id="linkBox" style="display:none;">
+            <span style="font-size:13px;color:#666;">🔗</span>
+            <input type="text" id="linkInput" readonly value="">
+            <button class="copy-btn" id="copyLinkBtn">复制</button>
+        </div>
+
+        <!-- 尺寸控制 -->
+        <div class="size-control" id="sizeControl" style="display:none;">
+            <label>二维码尺寸</label>
+            <input type="range" id="sizeRange" min="80" max="300" value="180" step="10">
+            <span class="size-val" id="sizeVal">180</span>
+            <span style="font-size:12px;color:#888;">px</span>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="btn-group" id="actionBtns" style="display:none;">
+            <button class="btn outline" id="downloadBtn">⬇️ 下载 PNG</button>
+            <button class="btn outline" id="copyImageBtn">📋 复制图片</button>
+            <button class="btn danger" id="clearBtn">🗑️ 清除</button>
+        </div>
+
+        <div class="tips">
+            💡 生成的二维码指向 <code>verify.html?id=编号</code> · 客户扫码即可核验身份
+            <br>
+            支持下载PNG或复制到剪贴板，可粘贴到名片设计器中
+        </div>
+    </div>
+
+    <div id="toast" class="toast">操作成功</div>
+
+    <script>
+        // ================================================================
+        // 数据层
+        // ================================================================
+
+        const DB_KEY = 'emp_system_data';
+        const BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
+
+        function getEmployees() {
+            const stored = localStorage.getItem(DB_KEY);
+            if (stored) {
+                try {
+                    const data = JSON.parse(stored);
+                    if (data && data.length > 0) return data;
+                } catch (e) {}
+            }
+            // 默认数据（与admin保持一致）
+            const defaults = [{
+                id: 'CCPEFYHDC2026110001',
+                name: '庄国辉',
+                title: '副主任兼办公室主任',
+                duty: '负责健康工作委员会全面事务与统筹协调...',
+                phone: '18520661777',
+                email: 'zjxqab@163.com',
+                address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
+                wechatQr: '',
+                avatar: '',
+                status: 1
+            }, {
+                id: 'CCPEFYHDC2026110002',
+                name: '黄金平',
+                title: '副主任',
+                duty: '负责青少年生态健康项目统筹',
+                phone: '13337819393',
+                email: '2924603747@qq.com',
+                address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
+                wechatQr: '',
+                avatar: '',
+                status: 1
+            }];
+            localStorage.setItem(DB_KEY, JSON.stringify(defaults));
+            return defaults;
+        }
+
+        function getMember(id) {
+            const list = getEmployees();
+            return list.find(e => e.id === id) || null;
+        }
+
+        // ================================================================
+        // 状态
+        // ================================================================
+
+        let currentMemberId = null;
+        let currentQrCode = null;
+        let currentSize = 180;
+
+        // ================================================================
+        // 渲染选择器
+        // ================================================================
+
+        function populateSelector() {
+            const sel = document.getElementById('memberSelect');
+            const employees = getEmployees();
+
+            sel.innerHTML = '<option value="">-- 请选择成员 --</option>';
+
+            if (employees.length === 0) {
+                sel.innerHTML = '<option value="">-- 暂无成员，请在后台添加 --</option>';
+                return;
+            }
+
+            employees.forEach(emp => {
+                const opt = document.createElement('option');
+                opt.value = emp.id;
+                opt.textContent = emp.name + ' (' + emp.id.slice(-6) + ')' + (emp.status === 1 ? ' ✅' : ' ❌');
+                sel.appendChild(opt);
+            });
+
+            // 如果URL有id参数，自动选中
+            const params = new URLSearchParams(window.location.search);
+            const idParam = params.get('id');
+            if (idParam && employees.some(e => e.id === idParam)) {
+                sel.value = idParam;
+                generateQR(idParam);
+            }
+        }
+
+        // ================================================================
+        // 生成二维码
+        // ================================================================
+
+        function generateQR(memberId) {
+            const member = getMember(memberId);
+            if (!member) {
+                showToast('⚠️ 未找到该成员');
+                return;
+            }
+
+            currentMemberId = memberId;
+
+            // 显示成员信息
+            const infoDiv = document.getElementById('memberInfo');
+            infoDiv.style.display = 'flex';
+            document.getElementById('infoAvatar').textContent = member.name.charAt(0);
+            if (member.avatar) {
+                document.getElementById('infoAvatar').innerHTML =
+                    `<img src="${member.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            }
+            document.getElementById('infoName').textContent = member.name;
+            document.getElementById('infoTitle').textContent = member.title || '无职务';
+            document.getElementById('infoId').textContent = '编号：' + member.id;
+
+            const statusBadge = document.getElementById('infoStatus');
+            if (member.status === 1) {
+                statusBadge.textContent = '✅ 在职';
+                statusBadge.className = 'status-badge active';
+            } else {
+                statusBadge.textContent = '❌ 离职';
+                statusBadge.className = 'status-badge inactive';
+            }
+
+            // 生成二维码 - 指向 verify.html
+            const verifyUrl = BASE_URL + '/verify.html?id=' + member.id;
+            document.getElementById('qrLinkLabel').textContent = verifyUrl;
+            document.getElementById('linkInput').value = verifyUrl;
+
+            // 显示各区域
+            document.getElementById('qrSection').style.display = 'block';
+            document.getElementById('linkBox').style.display = 'flex';
+            document.getElementById('sizeControl').style.display = 'flex';
+            document.getElementById('actionBtns').style.display = 'flex';
+
+            // 生成二维码
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+
+            try {
+                currentQrCode = new QRCode(qrContainer, {
+                    text: verifyUrl,
+                    width: currentSize,
+                    height: currentSize,
+                    colorDark: '#1b5e20',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                showToast('✅ 二维码已生成');
+            } catch (e) {
+                showToast('⚠️ 生成失败：' + e.message);
+                qrContainer.textContent = '生成失败，请重试';
+            }
+        }
+
+        // ================================================================
+        // 尺寸调整
+        // ================================================================
+
+        document.getElementById('sizeRange').addEventListener('input', function() {
+            currentSize = parseInt(this.value);
+            document.getElementById('sizeVal').textContent = currentSize;
+            if (currentMemberId) {
+                generateQR(currentMemberId);
+            }
+        });
+
+        // ================================================================
+        // 下载 PNG
+        // ================================================================
+
+        document.getElementById('downloadBtn').addEventListener('click', function() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) {
+                showToast('⚠️ 请先生成二维码');
+                return;
+            }
+
+            const member = getMember(currentMemberId);
+            if (!member) return;
+
+            // 创建带边框和标签的完整二维码图片
+            const size = currentSize + 80;
+            const c = document.createElement('canvas');
+            c.width = size;
+            c.height = size + 60;
+            const ctx = c.getContext('2d');
+
+            // 背景
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, c.width, c.height);
+
+            // 圆角矩形边框
+            const r = 16;
+            const x = 40,
+                y = 30,
+                w = currentSize,
+                h = currentSize;
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.strokeStyle = '#4caf50';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // 绘制二维码
+            const qrCanvas = document.querySelector('#qrcode canvas');
+            ctx.drawImage(qrCanvas, 40, 30, currentSize, currentSize);
+
+            // 底部文字
+            ctx.fillStyle = '#1b5e20';
+            ctx.font = 'bold 16px "PingFang SC","Microsoft YaHei",sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('中国林业与环境促进会 · 身份核验', c.width / 2, c.height - 28);
+
+            ctx.fillStyle = '#888';
+            ctx.font = '12px "PingFang SC","Microsoft YaHei",sans-serif';
+            ctx.fillText(member.name + ' | ' + member.id, c.width / 2, c.height - 8);
+
+            // 下载
+            const link = document.createElement('a');
+            link.download = '核验二维码_' + member.name + '_' + member.id + '.png';
+            link.href = c.toDataURL('image/png');
+            link.click();
+            showToast('✅ 已下载');
+        });
+
+        // ================================================================
+        // 复制图片到剪贴板
+        // ================================================================
+
+        document.getElementById('copyImageBtn').addEventListener('click', function() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (!canvas) {
+                showToast('⚠️ 请先生成二维码');
+                return;
+            }
+
+            canvas.toBlob(function(blob) {
+                try {
+                    navigator.clipboard.write([
+                        new ClipboardItem({
+                            [blob.type]: blob
+                        })
+                    ]).then(() => {
+                        showToast('✅ 图片已复制到剪贴板');
+                    }).catch(() => {
+                        showToast('⚠️ 复制失败，请使用下载功能');
+                    });
+                } catch (e) {
+                    showToast('⚠️ 浏览器不支持，请使用下载功能');
+                }
+            });
+        });
+
+        // ================================================================
+        // 复制链接
+        // ================================================================
+
+        document.getElementById('copyLinkBtn').addEventListener('click', function() {
+            const input = document.getElementById('linkInput');
+            input.select();
+            try {
+                navigator.clipboard.writeText(input.value).then(() => {
+                    showToast('✅ 链接已复制');
+                }).catch(() => {
+                    document.execCommand('copy');
+                    showToast('✅ 链接已复制');
+                });
+            } catch (e) {
+                document.execCommand('copy');
+                showToast('✅ 链接已复制');
+            }
+        });
+
+        // ================================================================
+        // 清除
+        // ================================================================
+
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            document.getElementById('qrcode').innerHTML = '';
+            document.getElementById('memberInfo').style.display = 'none';
+            document.getElementById('qrSection').style.display = 'none';
+            document.getElementById('linkBox').style.display = 'none';
+            document.getElementById('sizeControl').style.display = 'none';
+            document.getElementById('actionBtns').style.display = 'none';
+            document.getElementById('memberSelect').value = '';
+            currentMemberId = null;
+            currentQrCode = null;
+            showToast('已清除');
+        });
+
+        // ================================================================
+        // 生成按钮
+        // ================================================================
+
+        document.getElementById('generateBtn').addEventListener('click', function() {
+            const id = document.getElementById('memberSelect').value;
+            if (!id) {
+                showToast('⚠️ 请先选择成员');
+                return;
+            }
+            generateQR(id);
+        });
+
+        // 选择变更时自动生成
+        document.getElementById('memberSelect').addEventListener('change', function() {
+            const id = this.value;
+            if (id) {
+                generateQR(id);
+            }
+        });
+
+        // ================================================================
+        // Toast
+        // ================================================================
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        // ================================================================
+        // 启动
+        // ================================================================
+
+        populateSelector();
+        console.log('✅ 二维码生成器已启动');
+        console.log('📌 数据来源:', DB_KEY);
+        console.log('📌 核验页面:', BASE_URL + '/verify.html');
+    </script>
+</body>
+</html>

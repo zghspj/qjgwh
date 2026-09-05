@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>电子名片 · 中国林业与环境促进会</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js">
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #d0dcd0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 16px;
+            position: relative;
+        }
+        .card-wrapper {
+            position: relative;
+            max-width: 420px;
+            width: 100%;
+        }
+        .card {
+            max-width: 420px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            padding: 30px 24px 24px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #81c784;
+            min-height: 600px;
+        }
+        .card .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 36px;
+            font-weight: 900;
+            color: rgba(46, 125, 50, 0.05);
+            pointer-events: none;
+            white-space: nowrap;
+            letter-spacing: 6px;
+            width: 200%;
+            text-align: center;
+        }
+        .card .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #2e7d32, #81c784, #c9a84c);
+            border-radius: 28px 28px 0 0;
+        }
+        .drag-element {
+            position: absolute;
+            padding: 4px;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2px;
+            border-radius: 0;
+            background: transparent;
+            border: none;
+            overflow: visible !important;
+            overflow-wrap: break-word;
+            word-break: break-word;
+            line-height: 1.2;
+            z-index: 1;
+        }
+        .drag-element img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+        .drag-element .text-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            word-break: break-word;
+            padding: 4px;
+        }
+        .drag-element .qr-box {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #c8e6c9;
+            overflow: hidden;
+        }
+        .drag-element .qr-box canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .invalid-card {
+            max-width: 420px;
+            width: 100%;
+            background: #fff;
+            border-radius: 28px;
+            padding: 50px 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        }
+        .invalid-card .icon {
+            font-size: 52px;
+            margin-bottom: 12px;
+            opacity: 0.3;
+        }
+        .invalid-card h3 {
+            color: #1b5e20;
+            font-size: 19px;
+        }
+        .invalid-card p {
+            color: #888;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        /* 底部工具栏 - 独立于名片 */
+        .card-toolbar {
+            max-width: 420px;
+            width: 100%;
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card-toolbar .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            background: #2e7d32;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            justify-content: center;
+            min-width: 80px;
+        }
+        .card-toolbar .btn:hover {
+            background: #1b5e20;
+        }
+        .card-toolbar .btn.outline {
+            background: transparent;
+            color: #2e7d32;
+            border: 2px solid #2e7d32;
+        }
+        .card-toolbar .btn.outline:hover {
+            background: #2e7d32;
+            color: #fff;
+        }
+        .card-toolbar .btn.danger {
+            background: #c62828;
+        }
+        .card-toolbar .btn.danger:hover {
+            background: #b71c1c;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1b5e20;
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 440px) {
+            .card {
+                padding: 20px 16px;
+            }
+            .drag-element {
+                padding: 2px;
+            }
+            .card-toolbar .btn {
+                font-size: 12px;
+                padding: 8px 12px;
+                min-width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="display:flex;flex-direction:column;align-items:center;width:100%;">
+        <div class="card-wrapper" id="cardWrapper">
+            <div id="cardContainer"></div>
+        </div>
+
+        <!-- 底部工具栏 -->
+        <div class="card-toolbar" id="toolbar" style="display:none;">
+            <button class="btn outline" id="shareBtn">📤 分享</button>
+            <button class="btn outline" id="downloadCardBtn">⬇️ 下载名片</button>
+            <button class="btn outline" id="copyLinkBtn">📋 复制链接</button>
+            <button class="btn outline" id="viewVerifyBtn">🔍 核验</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">操作成功</div>
+
+    <script>
+        // ================================================================
+        // 数据层
+        // ================================================================
+
+        const DB_KEY = 'emp_system_data';
+        const LAYOUT_PREFIX = 'designer_layout_';
+        const BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
+
+        function getEmployees() {
+            const stored = localStorage.getItem(DB_KEY);
+            if (stored) {
+                try {
+                    const data = JSON.parse(stored);
+                    if (data && data.length > 0) return data;
+                } catch (e) {}
+            }
+            return [];
+        }
+
+        function getMember(id) {
+            const list = getEmployees();
+            return list.find(e => e.id === id) || null;
+        }
+
+        function getDesign(memberId) {
+            const key = LAYOUT_PREFIX + memberId;
+            const stored = localStorage.getItem(key);
+            if (stored) {
+                try { return JSON.parse(stored); } catch (e) { return null; }
+            }
+            return null;
+        }
+
+        // ================================================================
+        // 渲染引擎
+        // ================================================================
+
+        function buildElementContent(data, member) {
+            const wrapper = document.createElement('div');
+            wrapper.style.width = '100%';
+            wrapper.style.height = '100%';
+            wrapper.style.display = 'flex';
+            wrapper.style.alignItems = 'center';
+            wrapper.style.justifyContent = 'center';
+            wrapper.style.flexWrap = 'wrap';
+            wrapper.style.gap = '4px';
+            wrapper.style.overflow = 'visible';
+            wrapper.style.overflowWrap = 'break-word';
+            wrapper.style.wordBreak = 'break-word';
+            wrapper.style.lineHeight = '1.2';
+
+            switch (data.type) {
+                case 'logo-left':
+                case 'logo-right': {
+                    const isLeft = data.type === 'logo-left';
+                    if (data.imageData) {
+                        const img = document.createElement('img');
+                        img.src = data.imageData;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        wrapper.appendChild(img);
+                    } else {
+                        wrapper.textContent = isLeft ? '委员会Logo' : '总会Logo';
+                        wrapper.style.fontSize = '14px';
+                        wrapper.style.color = '#888';
+                        wrapper.style.fontWeight = 'bold';
+                    }
+                    break;
+                }
+                case 'image': {
+                    if (data.imageData) {
+                        const img = document.createElement('img');
+                        img.src = data.imageData;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        if (data.placeholder === '头像') {
+                            img.style.borderRadius = '50%';
+                            img.style.objectFit = 'cover';
+                        }
+                        wrapper.appendChild(img);
+                    } else if (data.placeholder === '头像' && member && member.avatar) {
+                        const img = document.createElement('img');
+                        img.src = member.avatar;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        img.style.borderRadius = '50%';
+                        wrapper.appendChild(img);
+                    } else {
+                        wrapper.textContent = data.placeholder || '图片';
+                        wrapper.style.fontSize = '12px';
+                        wrapper.style.color = '#888';
+                    }
+                    break;
+                }
+                case 'text': {
+                    const td = document.createElement('div');
+                    td.className = 'text-content';
+                    td.textContent = data.content || '文字';
+                    td.style.fontSize = data.fontSize + 'px';
+                    td.style.color = data.color || '#1b5e20';
+                    td.style.fontWeight = data.fontWeight || 'normal';
+                    td.style.fontFamily = data.fontFamily || 'inherit';
+                    td.style.textAlign = data.textAlign || 'center';
+                    wrapper.appendChild(td);
+                    break;
+                }
+                case 'name': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.fontWeight = data.fontWeight || 'bold';
+                    sp.style.color = data.color || '#1b5e20';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    sp.textContent = data.content || (member ? member.name : '姓名');
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'title': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.fontWeight = data.fontWeight || 'normal';
+                    sp.style.color = data.color || '#2e7d32';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    sp.textContent = data.content || (member ? member.title : '职务');
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'id': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.color = data.color || '#555';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    sp.textContent = data.content || (member ? '编号：' + member.id : '编号：000');
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'duty': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.color = data.color || '#1b5e20';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    sp.textContent = data.content || (member ? '职责：' + member.duty : '职责：未设置');
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'status-badge': {
+                    const isActive = member?.status === 1;
+                    const badge = document.createElement('span');
+                    badge.style.fontSize = data.fontSize + 'px';
+                    badge.style.fontWeight = 'bold';
+                    badge.style.color = isActive ? '#2e7d32' : '#c62828';
+                    badge.style.backgroundColor = isActive ? '#e8f5e9' : '#ffebee';
+                    badge.style.padding = '4px 16px';
+                    badge.style.borderRadius = '30px';
+                    badge.style.border = isActive ? '2px solid #4caf50' : '2px solid #e53935';
+                    badge.textContent = isActive ? '✅ 在职' : '❌ 离职';
+                    wrapper.appendChild(badge);
+                    break;
+                }
+                case 'org': {
+                    const lines = (data.content || '').split('\n');
+                    const block = document.createElement('div');
+                    block.style.width = '100%';
+                    block.style.height = '100%';
+                    block.style.display = 'flex';
+                    block.style.flexDirection = 'column';
+                    block.style.justifyContent = 'center';
+                    block.style.padding = '8px 12px';
+                    block.style.borderRadius = data.radius + 'px';
+                    block.style.backgroundColor = data.bg || '#f1f8e9';
+                    block.style.borderLeft = '5px solid #4caf50';
+                    const l1 = document.createElement('div');
+                    l1.style.fontWeight = 'bold';
+                    l1.style.color = data.color || '#1b5e20';
+                    l1.style.fontSize = data.fontSize + 'px';
+                    l1.textContent = lines[0] || '单位名称';
+                    block.appendChild(l1);
+                    if (lines[1]) {
+                        const l2 = document.createElement('div');
+                        l2.style.fontWeight = 'normal';
+                        l2.style.color = data.color || '#2e7d32';
+                        l2.style.fontSize = (data.fontSize * 0.9) + 'px';
+                        l2.textContent = lines[1];
+                        block.appendChild(l2);
+                    }
+                    wrapper.appendChild(block);
+                    break;
+                }
+                case 'phone':
+                case 'email':
+                case 'address':
+                case 'slogan': {
+                    const sp = document.createElement('span');
+                    sp.style.fontSize = data.fontSize + 'px';
+                    sp.style.color = data.color || '#1b5e20';
+                    sp.style.fontFamily = data.fontFamily || 'inherit';
+                    sp.style.textAlign = data.textAlign || 'left';
+                    if (data.type === 'slogan') sp.style.fontWeight = 'bold';
+                    sp.textContent = data.content || '';
+                    wrapper.appendChild(sp);
+                    break;
+                }
+                case 'wechat': {
+                    if (member && member.wechatQr) {
+                        const img = document.createElement('img');
+                        img.src = member.wechatQr;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        wrapper.appendChild(img);
+                    } else if (data.imageData) {
+                        const img = document.createElement('img');
+                        img.src = data.imageData;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        wrapper.appendChild(img);
+                    } else {
+                        const ph = document.createElement('div');
+                        ph.style.width = '100%';
+                        ph.style.height = '100%';
+                        ph.style.borderRadius = data.radius + 'px';
+                        ph.style.background = data.bg || '#e8f5e9';
+                        ph.style.border = '1px dashed #81c784';
+                        ph.style.display = 'flex';
+                        ph.style.alignItems = 'center';
+                        ph.style.justifyContent = 'center';
+                        ph.textContent = '微信码';
+                        wrapper.appendChild(ph);
+                    }
+                    break;
+                }
+                case 'qr': {
+                    const box = document.createElement('div');
+                    box.className = 'qr-box';
+                    box.style.width = '100%';
+                    box.style.height = '100%';
+                    box.style.borderRadius = data.radius + 'px';
+                    box.style.background = data.bg || '#ffffff';
+                    box.style.border = data.border || '1px solid #c8e6c9';
+                    box.style.display = 'flex';
+                    box.style.alignItems = 'center';
+                    box.style.justifyContent = 'center';
+                    wrapper.appendChild(box);
+                    break;
+                }
+                case 'line': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('width', '100%');
+                    svg.setAttribute('height', '100%');
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', '0');
+                    line.setAttribute('y1', '0');
+                    line.setAttribute('x2', '100%');
+                    line.setAttribute('y2', '0');
+                    line.setAttribute('stroke', data.color || '#333');
+                    line.setAttribute('stroke-width', data.lineWidth || '2');
+                    svg.appendChild(line);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-rect': {
+                    wrapper.style.background = data.bg || '#4caf50';
+                    wrapper.style.border = data.border || 'none';
+                    break;
+                }
+                case 'shape-square': {
+                    wrapper.style.background = data.bg || '#4caf50';
+                    wrapper.style.border = data.border || 'none';
+                    break;
+                }
+                case 'shape-triangle': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    svg.style.width = '100%';
+                    svg.style.height = '100%';
+                    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    poly.setAttribute('points', '50,0 0,100 100,100');
+                    poly.setAttribute('fill', data.bg || '#4caf50');
+                    if (data.border && data.border !== 'none') {
+                        const parts = data.border.split(' ');
+                        if (parts.length >= 2) { poly.setAttribute('stroke', parts[2] || '#333');
+                            poly.setAttribute('stroke-width', parts[1] || '2'); }
+                    }
+                    svg.appendChild(poly);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-diamond': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    svg.style.width = '100%';
+                    svg.style.height = '100%';
+                    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    poly.setAttribute('points', '50,0 100,50 50,100 0,50');
+                    poly.setAttribute('fill', data.bg || '#4caf50');
+                    if (data.border && data.border !== 'none') {
+                        const parts = data.border.split(' ');
+                        if (parts.length >= 2) { poly.setAttribute('stroke', parts[2] || '#333');
+                            poly.setAttribute('stroke-width', parts[1] || '2'); }
+                    }
+                    svg.appendChild(poly);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-heart': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    svg.style.width = '100%';
+                    svg.style.height = '100%';
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    path.setAttribute('d',
+                        'M50,90 C20,60 0,40 0,25 C0,10 15,0 30,0 C40,0 46,5 50,12 C54,5 60,0 70,0 C85,0 100,10 100,25 C100,40 80,60 50,90Z'
+                        );
+                    path.setAttribute('fill', data.bg || '#e91e63');
+                    if (data.border && data.border !== 'none') {
+                        const parts = data.border.split(' ');
+                        if (parts.length >= 2) { path.setAttribute('stroke', parts[2] || '#333');
+                            path.setAttribute('stroke-width', parts[1] || '2'); }
+                    }
+                    svg.appendChild(path);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-star': {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', '0 0 100 100');
+                    svg.style.width = '100%';
+                    svg.style.height = '100%';
+                    const pts = [];
+                    const cx = 50,
+                        cy = 50,
+                        outer = 45,
+                        inner = 18;
+                    for (let i = 0; i < 10; i++) {
+                        const r = i % 2 === 0 ? outer : inner;
+                        const angle = (i * 36 - 90) * Math.PI / 180;
+                        pts.push(cx + r * Math.cos(angle));
+                        pts.push(cy + r * Math.sin(angle));
+                    }
+                    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    poly.setAttribute('points', pts.join(','));
+                    poly.setAttribute('fill', data.bg || '#ff9800');
+                    if (data.border && data.border !== 'none') {
+                        const parts = data.border.split(' ');
+                        if (parts.length >= 2) { poly.setAttribute('stroke', parts[2] || '#333');
+                            poly.setAttribute('stroke-width', parts[1] || '2'); }
+                    }
+                    svg.appendChild(poly);
+                    wrapper.appendChild(svg);
+                    break;
+                }
+                case 'shape-circle': {
+                    wrapper.style.background = data.bg || '#4caf50';
+                    wrapper.style.border = data.border || 'none';
+                    wrapper.style.borderRadius = '50%';
+                    break;
+                }
+                case 'shape-ellipse': {
+                    wrapper.style.background = data.bg || '#4caf50';
+                    wrapper.style.border = data.border || 'none';
+                    wrapper.style.borderRadius = '50%';
+                    break;
+                }
+                case 'divider':
+                    wrapper.style.borderBottom = data.border || 'solid 2px #c8e6c9';
+                    wrapper.style.background = 'transparent';
+                    wrapper.style.height = '2px';
+                    break;
+                default:
+                    wrapper.textContent = data.content || '元素';
+            }
+            return wrapper;
+        }
+
+        function generateQRCode(element, text, width, height) {
+            if (!element) return false;
+            element.innerHTML = '';
+            try {
+                var size = Math.min(width, height, 140);
+                if (size < 20) size = 140;
+                new QRCode(element, {
+                    text: text,
+                    width: size,
+                    height: size,
+                    colorDark: "#2e7d32",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                return true;
+            } catch (e) {
+                element.textContent = '二维码';
+                element.style.fontSize = '12px';
+                element.style.color = '#999';
+                element.style.display = 'flex';
+                element.style.alignItems = 'center';
+                element.style.justifyContent = 'center';
+                return false;
+            }
+        }
+
+        // ================================================================
+        // 渲染名片
+        // ================================================================
+
+        function renderCard() {
+            const container = document.getElementById('cardContainer');
+            const params = new URLSearchParams(window.location.search);
+            let id = params.get('id');
+
+            // 如果没有id，尝试找第一个在职成员
+            if (!id) {
+                const employees = getEmployees();
+                const active = employees.find(e => e.status === 1);
+                if (active) {
+                    window.history.replaceState({}, '', '?id=' + active.id);
+                    renderCard();
+                    return;
+                }
+                container.innerHTML =
+                    `<div class="invalid-card"><div class="icon">👥</div><h3>暂无人员信息</h3><p>请在后台添加成员</p></div>`;
+                document.getElementById('toolbar').style.display = 'none';
+                return;
+            }
+
+            const member = getMember(id);
+            if (!member) {
+                container.innerHTML =
+                    `<div class="invalid-card"><div class="icon">🔍</div><h3>查无此人</h3><p>编号 ${id} 不存在</p></div>`;
+                document.getElementById('toolbar').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('toolbar').style.display = 'flex';
+
+            const design = getDesign(id);
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+            cardDiv.id = 'cardContent';
+
+            const watermark = document.createElement('div');
+            watermark.className = 'watermark';
+            watermark.textContent = '中国林业与环境促进会';
+            const topBar = document.createElement('div');
+            topBar.className = 'top-bar';
+            cardDiv.appendChild(watermark);
+            cardDiv.appendChild(topBar);
+
+            if (design && design.length > 0) {
+                design.forEach(el => {
+                    const elDiv = document.createElement('div');
+                    elDiv.className = 'drag-element';
+                    elDiv.style.left = el.left + 'px';
+                    elDiv.style.top = el.top + 'px';
+                    elDiv.style.width = el.width + 'px';
+                    elDiv.style.height = el.height + 'px';
+                    elDiv.style.color = el.color || '#1b5e20';
+                    elDiv.style.backgroundColor = el.bg || 'transparent';
+                    elDiv.style.border = el.border || 'none';
+                    elDiv.style.borderRadius = (el.radius || 0) + 'px';
+                    elDiv.style.fontSize = (el.fontSize || 14) + 'px';
+                    if (el.fontFamily) elDiv.style.fontFamily = el.fontFamily;
+                    if (el.textAlign) elDiv.style.textAlign = el.textAlign;
+                    if (el.fontWeight) elDiv.style.fontWeight = el.fontWeight;
+                    elDiv.style.position = 'absolute';
+
+                    const content = buildElementContent(el, member);
+                    elDiv.appendChild(content);
+                    cardDiv.appendChild(elDiv);
+                });
+            } else {
+                // 无设计时显示基本信息
+                cardDiv.innerHTML += `
+                    <div style="text-align:center;padding:40px 20px;color:#888;">
+                        <div style="font-size:48px;margin-bottom:12px;">📇</div>
+                        <div style="font-size:24px;font-weight:700;color:#1b5e20;">${member.name}</div>
+                        <div style="font-size:16px;color:#2e7d32;margin-top:4px;">${member.title || '无职务'}</div>
+                        <div style="font-size:13px;color:#555;margin-top:8px;">编号：${member.id}</div>
+                        ${member.phone ? `<div style="font-size:13px;color:#555;">📞 ${member.phone}</div>` : ''}
+                        ${member.email ? `<div style="font-size:13px;color:#555;">✉️ ${member.email}</div>` : ''}
+                        <div style="font-size:12px;color:#999;margin-top:12px;">请使用设计器定制名片</div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = '';
+            container.appendChild(cardDiv);
+
+            // 生成二维码（指向 verify.html）
+            setTimeout(function() {
+                const qrBoxes = cardDiv.querySelectorAll('.drag-element .qr-box');
+                const verifyUrl = BASE_URL + '/verify.html?id=' + member.id;
+                qrBoxes.forEach(function(box) {
+                    var parent = box.closest('.drag-element');
+                    var w = 80,
+                        h = 80;
+                    if (parent) {
+                        var pw = parent.offsetWidth - 8;
+                        var ph = parent.offsetHeight - 8;
+                        if (pw > 20) w = pw;
+                        if (ph > 20) h = ph;
+                    }
+                    generateQRCode(box, verifyUrl, w, h);
+                });
+            }, 200);
+
+            // 存储当前成员ID供工具栏使用
+            window._currentMemberId = member.id;
+            window._currentMember = member;
+        }
+
+        // ================================================================
+        // 工具栏功能
+        // ================================================================
+
+        // 分享
+        document.getElementById('shareBtn').addEventListener('click', function() {
+            const id = window._currentMemberId;
+            if (!id) return;
+            const url = window.location.href.split('?')[0] + '?id=' + id;
+            if (navigator.share) {
+                navigator.share({
+                    title: '电子名片',
+                    text: window._currentMember.name + ' · ' + window._currentMember.title,
+                    url: url
+                }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('✅ 链接已复制，可分享给好友');
+                }).catch(() => {
+                    showToast('⚠️ 请手动复制链接: ' + url);
+                });
+            }
+        });
+
+        // 下载名片
+        document.getElementById('downloadCardBtn').addEventListener('click', function() {
+            const card = document.getElementById('cardContent');
+            if (!card) {
+                showToast('⚠️ 请先生成名片');
+                return;
+            }
+
+            // 使用html2canvas生成图片
+            // 如果没有html2canvas，使用简单提示
+            if (typeof html2canvas === 'undefined') {
+                showToast('⚠️ 请引入html2canvas库或使用截图功能');
+                return;
+            }
+
+            html2canvas(card, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '名片_' + window._currentMember.name + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('✅ 名片已下载');
+            }).catch(err => {
+                showToast('⚠️ 下载失败，请使用截图');
+                console.error(err);
+            });
+        });
+
+        // 复制链接
+        document.getElementById('copyLinkBtn').addEventListener('click', function() {
+            const id = window._currentMemberId;
+            if (!id) return;
+            const url = window.location.href.split('?')[0] + '?id=' + id;
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('✅ 链接已复制');
+            }).catch(() => {
+                // fallback
+                const input = document.createElement('input');
+                input.value = url;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast('✅ 链接已复制');
+            });
+        });
+
+        // 核验
+        document.getElementById('viewVerifyBtn').addEventListener('click', function() {
+            const id = window._currentMemberId;
+            if (!id) return;
+            window.open(BASE_URL + '/verify.html?id=' + id, '_blank');
+        });
+
+        // ================================================================
+        // Toast
+        // ================================================================
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        // ================================================================
+        // 启动
+        // ================================================================
+
+        renderCard();
+        window.addEventListener('popstate', renderCard);
+        console.log('✅ 名片展示页已启动');
+        console.log('📌 数据来源:', DB_KEY);
+        console.log('📌 核验页面:', BASE_URL + '/verify.html');
+
+        // 如果html2canvas未加载，提示
+        if (typeof html2canvas === 'undefined') {
+            console.warn('⚠️ html2canvas未加载，下载功能需要引入该库');
+            // 动态加载
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+            document.head.appendChild(script);
+        }
+    </script>
+</body>
+</html>

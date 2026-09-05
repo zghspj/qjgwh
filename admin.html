@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成员管理 · 后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background: #e8f5e9;
+            display: flex;
+            justify-content: center;
+            padding: 30px 16px;
+        }
+        .panel {
+            max-width: 720px;
+            width: 100%;
+            background: #fff;
+            border-radius: 28px;
+            padding: 28px 24px;
+            box-shadow: 0 8px 30px rgba(46, 125, 50, 0.15);
+            border: 1px solid #a5d6a7;
+        }
+        h1 {
+            font-size: 24px;
+            color: #1b5e20;
+            border-left: 6px solid #4caf50;
+            padding-left: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #888;
+        }
+        .row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 12px;
+        }
+        .row label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+        .row input,
+        .row select,
+        .row textarea {
+            padding: 10px 14px;
+            border: 1px solid #c8e6c9;
+            border-radius: 12px;
+            font-size: 14px;
+            background: #f9fbf9;
+            font-family: inherit;
+        }
+        .row input:focus,
+        .row select:focus,
+        .row textarea:focus {
+            border-color: #2e7d32;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.15);
+        }
+        .row textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .file-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .file-group input[type="file"] {
+            flex: 1;
+            padding: 8px 0;
+            border: none;
+            background: transparent;
+        }
+        .file-group .preview-box img {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4caf50;
+            background: #e8f5e9;
+        }
+        .file-group .preview-box .qr-preview {
+            border-radius: 8px;
+            width: 56px;
+            height: 56px;
+            border: 2px solid #4caf50;
+            object-fit: contain;
+            background: #fff;
+        }
+        .btn {
+            padding: 12px 0;
+            border: none;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            background: #2e7d32;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:hover {
+            background: #1b5e20;
+        }
+        .btn.danger {
+            background: #c62828;
+        }
+        .btn.danger:hover {
+            background: #b71c1c;
+        }
+        .btn.outline {
+            background: transparent;
+            color: #2e7d32;
+            border: 2px solid #2e7d32;
+        }
+        .btn.outline:hover {
+            background: #2e7d32;
+            color: #fff;
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+            background: #2e7d32;
+            cursor: pointer;
+        }
+        .btn-sm.danger {
+            background: #c62828;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-group .btn {
+            flex: 1;
+        }
+        .member-list {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 16px;
+        }
+        .member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: #f1f8e9;
+            border-radius: 14px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .member-item .info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .member-item .info .thumb {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #a5d6a7;
+            background: #c8e6c9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #2e7d32;
+            font-size: 14px;
+        }
+        .member-item .info .tag {
+            background: #4caf50;
+            color: #fff;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .member-item .info .tag.off {
+            background: #e53935;
+        }
+        .member-item .actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .member-item .actions a {
+            color: #2e7d32;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 1px dashed #2e7d32;
+        }
+        .member-item .actions .del {
+            color: #c62828;
+            font-weight: 700;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 20px;
+            padding: 0 4px;
+        }
+        .toast {
+            background: #1b5e20;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: 0.3s;
+            pointer-events: none;
+            z-index: 999;
+        }
+        .toast.show {
+            opacity: 1;
+            bottom: 40px;
+        }
+        .id-hint {
+            font-size: 12px;
+            color: #888;
+            margin-top: 2px;
+        }
+        .id-hint code {
+            background: #f1f8e9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #1b5e20;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            padding: 12px 16px;
+            background: #f1f8e9;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #2e7d32;
+        }
+        .stats span {
+            font-weight: 600;
+        }
+        .quick-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 12px 0 16px;
+        }
+        .quick-links a {
+            display: inline-block;
+            padding: 6px 16px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid #a5d6a7;
+            transition: 0.2s;
+        }
+        .quick-links a:hover {
+            background: #c8e6c9;
+        }
+        @media (max-width: 480px) {
+            .panel {
+                padding: 20px 16px;
+            }
+            .member-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .member-item .actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            .quick-links a {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="panel">
+        <h1>
+            🌱 成员管理
+            <small id="totalCount">共 0 人</small>
+        </h1>
+
+        <div class="stats">
+            <span>👤 在职：<span id="activeCount">0</span></span>
+            <span>📤 离职：<span id="inactiveCount">0</span></span>
+        </div>
+
+        <div class="quick-links">
+            <a href="designer.html" target="_blank">🎨 名片设计器</a>
+            <a href="qrcode.html" target="_blank">📱 二维码生成器</a>
+            <a href="card.html" target="_blank">👁️ 名片预览</a>
+        </div>
+
+        <form id="memberForm">
+            <div class="row">
+                <label>编号 (唯一ID)</label>
+                <input type="text" id="inputId" placeholder="例如 CCPEFYHDC2026110001" required>
+                <div class="id-hint">💡 建议格式：<code>CCPEFYHDC2026110001</code></div>
+            </div>
+            <div class="row">
+                <label>姓名</label>
+                <input type="text" id="inputName" placeholder="庄国辉" required>
+            </div>
+            <div class="row">
+                <label>职务</label>
+                <input type="text" id="inputTitle" placeholder="副主任兼办公室主任" required>
+            </div>
+            <div class="row">
+                <label>职责描述</label>
+                <textarea id="inputDuty" rows="3" placeholder="负责全面事务与统筹协调..."></textarea>
+            </div>
+            <div class="row">
+                <label>电话</label>
+                <input type="text" id="inputPhone" placeholder="18520661777">
+            </div>
+            <div class="row">
+                <label>邮箱</label>
+                <input type="text" id="inputEmail" placeholder="zjxqab@163.com">
+            </div>
+            <div class="row">
+                <label>地址</label>
+                <input type="text" id="inputAddress" placeholder="北京市通州区景盛二街12号纳特园区11号楼2层东厅">
+            </div>
+            <div class="row">
+                <label>微信二维码 (上传图片)</label>
+                <div class="file-group">
+                    <input type="file" id="inputWechat" accept="image/*">
+                    <div class="preview-box">
+                        <img id="wechatPreview" class="qr-preview" style="display:none;" alt="微信预览">
+                        <button type="button" class="btn-sm danger" id="clearWechat" style="display:none;">清除</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <label>个人头像 (上传照片)</label>
+                <div class="file-group">
+                    <input type="file" id="inputAvatar" accept="image/*">
+                    <div class="preview-box">
+                        <img id="avatarPreview" style="display:none;" alt="头像预览">
+                        <button type="button" class="btn-sm danger" id="clearAvatar" style="display:none;">清除</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <label>在岗状态</label>
+                <select id="inputStatus">
+                    <option value="1">✅ 在职</option>
+                    <option value="0">❌ 离职</option>
+                </select>
+            </div>
+            <button type="submit" class="btn">➕ 添加 / 更新成员</button>
+        </form>
+
+        <div class="btn-group" style="margin-top:16px;">
+            <button id="resetDataBtn" class="btn danger">重置默认数据</button>
+        </div>
+
+        <div class="member-list" id="memberList"></div>
+
+        <div class="btn-group" style="margin-top:16px;">
+            <button id="exportBtn" class="btn outline">📤 导出</button>
+            <button id="importBtn" class="btn outline">📥 导入</button>
+            <input type="file" id="fileInput" accept=".json" style="display:none;">
+        </div>
+        <p style="font-size:11px; color:#aaa; margin-top:12px; text-align:center;">
+            💡 数据存于浏览器本地 · 各工具独立运行，共享数据
+        </p>
+    </div>
+
+    <div id="toast" class="toast">操作成功</div>
+
+    <script>
+        // ================================================================
+        // 数据层 - 唯一数据源
+        // ================================================================
+
+        const DB_KEY = 'emp_system_data';
+
+        const DEFAULT_EMPLOYEES = [{
+            id: 'CCPEFYHDC2026110001',
+            name: '庄国辉',
+            title: '副主任兼办公室主任',
+            duty: '负责健康工作委员会全面事务与统筹协调。具体包括：主持办公室全面工作，统筹协调各内设机构日常运转；负责秘书处日常工作，承担文秘、会务、机要、档案等综合管理；协调各副主任委员分管工作，督办重要会议事项落实；负责人事、财务、资产、后勤等行政事务管理；负责会员管理、对外联络与来访接待工作。',
+            phone: '18520661777',
+            email: 'zjxqab@163.com',
+            address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
+            wechatQr: '',
+            avatar: '',
+            status: 1
+        }, {
+            id: 'CCPEFYHDC2026110002',
+            name: '黄金平',
+            title: '副主任',
+            duty: '负责青少年生态健康项目统筹',
+            phone: '13337819393',
+            email: '2924603747@qq.com',
+            address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
+            wechatQr: '',
+            avatar: '',
+            status: 1
+        }];
+
+        // ----- 数据操作 -----
+        function getEmployees() {
+            const stored = localStorage.getItem(DB_KEY);
+            if (stored) {
+                try {
+                    const data = JSON.parse(stored);
+                    if (data && data.length > 0) return data;
+                } catch (e) {}
+            }
+            setEmployees(DEFAULT_EMPLOYEES);
+            return DEFAULT_EMPLOYEES;
+        }
+
+        function setEmployees(data) {
+            localStorage.setItem(DB_KEY, JSON.stringify(data));
+        }
+
+        function getMember(id) {
+            const list = getEmployees();
+            return list.find(e => e.id === id) || null;
+        }
+
+        function saveMember(member) {
+            const list = getEmployees();
+            const idx = list.findIndex(e => e.id === member.id);
+            if (idx > -1) {
+                list[idx] = member;
+            } else {
+                list.push(member);
+            }
+            setEmployees(list);
+            return list;
+        }
+
+        function deleteMember(id) {
+            let list = getEmployees();
+            list = list.filter(e => e.id !== id);
+            setEmployees(list);
+            return list;
+        }
+
+        // ================================================================
+        // UI 渲染
+        // ================================================================
+
+        function renderList() {
+            const list = document.getElementById('memberList');
+            const employees = getEmployees();
+
+            document.getElementById('totalCount').textContent = '共 ' + employees.length + ' 人';
+            const active = employees.filter(e => e.status === 1).length;
+            document.getElementById('activeCount').textContent = active;
+            document.getElementById('inactiveCount').textContent = employees.length - active;
+
+            if (employees.length === 0) {
+                list.innerHTML = '<p style="color:#999; text-align:center; padding:16px;">暂无成员</p>';
+                return;
+            }
+
+            list.innerHTML = employees.map(emp => {
+                let thumb = emp.avatar ? `<img src="${emp.avatar}" class="thumb">` :
+                    `<div class="thumb">${emp.name.charAt(0)}</div>`;
+                let wechatIcon = emp.wechatQr ? '📱' : '';
+                return `
+                    <div class="member-item">
+                        <div class="info">
+                            ${thumb}
+                            <strong>${emp.name}</strong>
+                            <span style="font-size:12px;color:#888;">${emp.id.slice(-6)}</span>
+                            <span class="tag ${emp.status===0?'off':''}">${emp.status===1?'在职':'离职'}</span>
+                            ${wechatIcon ? `<span style="font-size:12px;color:#4caf50;">${wechatIcon}</span>` : ''}
+                        </div>
+                        <div class="actions">
+                            <a href="card.html?id=${emp.id}" target="_blank">查看名片</a>
+                            <a href="designer.html?id=${emp.id}" target="_blank">设计</a>
+                            <a href="qrcode.html?id=${emp.id}" target="_blank">二维码</a>
+                            <button class="del" data-id="${emp.id}">✕</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            list.querySelectorAll('.del').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    if (confirm(`确定删除 ${id} 吗？`)) {
+                        deleteMember(id);
+                        renderList();
+                        showToast('已删除');
+                    }
+                });
+            });
+        }
+
+        // ================================================================
+        // 表单处理
+        // ================================================================
+
+        document.getElementById('memberForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('inputId').value.trim();
+            const name = document.getElementById('inputName').value.trim();
+            const title = document.getElementById('inputTitle').value.trim();
+            const duty = document.getElementById('inputDuty').value.trim();
+            const phone = document.getElementById('inputPhone').value.trim();
+            const email = document.getElementById('inputEmail').value.trim();
+            const address = document.getElementById('inputAddress').value.trim();
+            const status = parseInt(document.getElementById('inputStatus').value);
+            const avatar = document.getElementById('avatarPreview').src || '';
+            const wechatQr = document.getElementById('wechatPreview').src || '';
+
+            if (!id || !name || !title) {
+                showToast('请完整填写编号、姓名和职务');
+                return;
+            }
+
+            const existing = getMember(id);
+            const isNew = !existing;
+
+            const member = {
+                id,
+                name,
+                title,
+                duty,
+                phone,
+                email,
+                address,
+                wechatQr: isNew ? wechatQr : (wechatQr || existing.wechatQr || ''),
+                avatar: isNew ? avatar : (avatar || existing.avatar || ''),
+                status
+            };
+
+            saveMember(member);
+            showToast(isNew ? `✅ 已添加 ${name}` : `✅ 已更新 ${name}`);
+
+            // 清空预览
+            document.getElementById('avatarPreview').style.display = 'none';
+            document.getElementById('avatarPreview').src = '';
+            document.getElementById('clearAvatar').style.display = 'none';
+            document.getElementById('wechatPreview').style.display = 'none';
+            document.getElementById('wechatPreview').src = '';
+            document.getElementById('clearWechat').style.display = 'none';
+            document.getElementById('inputAvatar').value = '';
+            document.getElementById('inputWechat').value = '';
+
+            if (isNew) {
+                document.getElementById('inputId').value = '';
+                document.getElementById('inputName').value = '';
+                document.getElementById('inputTitle').value = '';
+                document.getElementById('inputDuty').value = '';
+                document.getElementById('inputPhone').value = '';
+                document.getElementById('inputEmail').value = '';
+                document.getElementById('inputAddress').value = '';
+            }
+
+            renderList();
+        });
+
+        // ================================================================
+        // 图片预览
+        // ================================================================
+
+        document.getElementById('inputAvatar').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const img = document.getElementById('avatarPreview');
+                    img.src = ev.target.result;
+                    img.style.display = 'block';
+                    document.getElementById('clearAvatar').style.display = 'inline-block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('clearAvatar').addEventListener('click', function() {
+            document.getElementById('inputAvatar').value = '';
+            document.getElementById('avatarPreview').style.display = 'none';
+            document.getElementById('avatarPreview').src = '';
+            this.style.display = 'none';
+        });
+
+        document.getElementById('inputWechat').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const img = document.getElementById('wechatPreview');
+                    img.src = ev.target.result;
+                    img.style.display = 'block';
+                    document.getElementById('clearWechat').style.display = 'inline-block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('clearWechat').addEventListener('click', function() {
+            document.getElementById('inputWechat').value = '';
+            document.getElementById('wechatPreview').style.display = 'none';
+            document.getElementById('wechatPreview').src = '';
+            this.style.display = 'none';
+        });
+
+        // ================================================================
+        // 导出 / 导入 / 重置
+        // ================================================================
+
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const data = getEmployees();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `members_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            showToast('导出成功');
+        });
+
+        document.getElementById('importBtn').addEventListener('click', function() {
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if (Array.isArray(data)) {
+                        setEmployees(data);
+                        renderList();
+                        showToast('导入成功');
+                    } else {
+                        showToast('格式错误');
+                    }
+                } catch (err) {
+                    showToast('解析失败');
+                }
+            };
+            reader.readAsText(file);
+            this.value = '';
+        });
+
+        document.getElementById('resetDataBtn').addEventListener('click', function() {
+            if (confirm('重置将恢复默认数据，确定吗？')) {
+                setEmployees(DEFAULT_EMPLOYEES);
+                renderList();
+                showToast('已重置');
+            }
+        });
+
+        // ================================================================
+        // Toast
+        // ================================================================
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        // ================================================================
+        // 启动
+        // ================================================================
+
+        renderList();
+        console.log('✅ 管理后台已启动');
+        console.log('📌 数据存储 Key:', DB_KEY);
+    </script>
+</body>
+</html>

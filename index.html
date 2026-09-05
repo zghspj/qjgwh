@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子名片系统 · 中国林业与环境促进会</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background: #e8f5e9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 520px;
+            width: 100%;
+            background: #fff;
+            border-radius: 28px;
+            padding: 40px 30px 30px;
+            box-shadow: 0 8px 30px rgba(46, 125, 50, 0.15);
+            border: 1px solid #a5d6a7;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #2e7d32, #81c784, #c9a84c);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        .logo-area img {
+            height: 52px;
+            width: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #4caf50;
+        }
+        .logo-area .logo-fallback {
+            height: 52px;
+            width: 52px;
+            border-radius: 50%;
+            background: #2e7d32;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 800;
+            border: 2px solid #4caf50;
+        }
+        h1 {
+            font-size: 22px;
+            color: #1b5e20;
+            margin-bottom: 2px;
+        }
+        .sub {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 24px;
+            letter-spacing: 1px;
+        }
+        .sub strong {
+            color: #c9a84c;
+            font-weight: 600;
+        }
+
+        .menu {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+        .menu a {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            background: #f9fbf9;
+            border-radius: 14px;
+            text-decoration: none;
+            color: #1b5e20;
+            font-weight: 600;
+            font-size: 15px;
+            transition: 0.25s;
+            border: 1.5px solid #e8f5e9;
+            position: relative;
+        }
+        .menu a:hover {
+            background: #f1f8e9;
+            border-color: #81c784;
+            transform: translateX(4px);
+            box-shadow: 0 2px 12px rgba(46, 125, 50, 0.08);
+        }
+        .menu a .icon {
+            font-size: 24px;
+            width: 36px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .menu a .info {
+            flex: 1;
+        }
+        .menu a .info .name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1b5e20;
+        }
+        .menu a .info .desc {
+            font-weight: 400;
+            font-size: 12px;
+            color: #999;
+            margin-top: 1px;
+        }
+        .menu a .arrow {
+            color: #ccc;
+            font-size: 18px;
+            transition: 0.2s;
+        }
+        .menu a:hover .arrow {
+            color: #4caf50;
+            transform: translateX(2px);
+        }
+
+        /* 状态标签 */
+        .menu a .badge {
+            font-size: 10px;
+            padding: 2px 10px;
+            border-radius: 20px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        .menu a .badge.orange {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .footer {
+            margin-top: 24px;
+            font-size: 12px;
+            color: #bbb;
+            border-top: 1px solid #f1f8e9;
+            padding-top: 16px;
+            line-height: 1.8;
+        }
+        .footer .highlight {
+            color: #2e7d32;
+            font-weight: 500;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            padding: 12px 0 18px;
+            font-size: 13px;
+            color: #555;
+            border-bottom: 1px solid #f1f8e9;
+            margin-bottom: 18px;
+        }
+        .stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .stats .num {
+            font-weight: 700;
+            color: #1b5e20;
+            font-size: 16px;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 28px 18px 20px;
+            }
+            h1 {
+                font-size: 19px;
+            }
+            .menu a {
+                padding: 12px 14px;
+                font-size: 14px;
+            }
+            .menu a .icon {
+                font-size: 20px;
+                width: 30px;
+            }
+            .logo-area img {
+                height: 40px;
+                width: 40px;
+            }
+            .stats {
+                gap: 14px;
+                font-size: 12px;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Logo 区域 -->
+        <div class="logo-area">
+            <img src="ccpef-yhdc.png" alt="委员会Logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="logo-fallback" style="display:none;">🌳</div>
+            <div style="text-align:left;line-height:1.2;">
+                <div style="font-size:13px;font-weight:600;color:#2e7d32;">中国林业与环境促进会</div>
+                <div style="font-size:11px;color:#888;">青少年儿童生态健康发展工作委员会</div>
+            </div>
+        </div>
+
+        <h1>📇 电子名片系统</h1>
+        <p class="sub"><strong>青健工委会</strong> · 官方身份认证</p>
+
+        <!-- 统计信息（动态读取） -->
+        <div class="stats" id="statsArea">
+            <span>👤 成员 <span class="num" id="totalCount">0</span></span>
+            <span>✅ 在职 <span class="num" id="activeCount">0</span></span>
+            <span>📤 离职 <span class="num" id="inactiveCount">0</span></span>
+        </div>
+
+        <!-- 导航菜单 -->
+        <div class="menu">
+            <a href="admin.html">
+                <span class="icon">🌱</span>
+                <div class="info">
+                    <div class="name">成员管理</div>
+                    <div class="desc">添加 / 编辑 / 删除成员</div>
+                </div>
+                <span class="badge">管理</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <a href="designer.html">
+                <span class="icon">🎨</span>
+                <div class="info">
+                    <div class="name">名片设计器</div>
+                    <div class="desc">拖拽设计 · 自由布局</div>
+                </div>
+                <span class="badge orange">设计</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <a href="qrcode.html">
+                <span class="icon">📱</span>
+                <div class="info">
+                    <div class="name">二维码生成器</div>
+                    <div class="desc">生成核验二维码 · 下载PNG</div>
+                </div>
+                <span class="badge">工具</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <a href="card.html">
+                <span class="icon">👁️</span>
+                <div class="info">
+                    <div class="name">名片预览</div>
+                    <div class="desc">查看设计好的电子名片</div>
+                </div>
+                <span class="badge">预览</span>
+                <span class="arrow">→</span>
+            </a>
+
+            <a href="verify.html">
+                <span class="icon">🔒</span>
+                <div class="info">
+                    <div class="name">身份核验</div>
+                    <div class="desc">客户扫码 · 官方核验</div>
+                </div>
+                <span class="badge orange">核验</span>
+                <span class="arrow">→</span>
+            </a>
+        </div>
+
+        <!-- 底部 -->
+        <div class="footer">
+            💡 数据存于浏览器本地 · 所有工具共享数据<br>
+            <span class="highlight">📌 客户扫码核验地址：</span>
+            <code style="font-size:11px;background:#f1f8e9;padding:2px 8px;border-radius:4px;color:#1b5e20;">
+                verify.html?id=编号
+            </code>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        // 读取成员数据，更新统计
+        // ================================================================
+
+        const DB_KEY = 'emp_system_data';
+
+        function getEmployees() {
+            try {
+                const stored = localStorage.getItem(DB_KEY);
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        return data;
+                    }
+                }
+            } catch (e) {}
+            return [];
+        }
+
+        function updateStats() {
+            const employees = getEmployees();
+            const total = employees.length;
+            const active = employees.filter(e => e.status === 1).length;
+            const inactive = total - active;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('activeCount').textContent = active;
+            document.getElementById('inactiveCount').textContent = inactive;
+        }
+
+        // 页面加载时更新统计
+        updateStats();
+
+        // 如果其他页面修改了数据，切回本页时自动刷新
+        window.addEventListener('focus', updateStats);
+
+        console.log('✅ 导航页已启动');
+        console.log('📌 当前成员数:', getEmployees().length);
+    </script>
+</body>
+</html>
