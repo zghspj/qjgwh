@@ -200,7 +200,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.4);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -228,6 +228,10 @@
             to {
                 transform: rotate(360deg);
             }
+        }
+        .loading-box p {
+            color: #555;
+            font-size: 14px;
         }
 
         @media (max-width: 440px) {
@@ -302,6 +306,9 @@
         }
 
         const BASE_URL = getBaseUrl();
+
+        console.log('🌐 BASE_URL:', BASE_URL);
+        console.log('📌 数据来源:', MEMBERS_URL);
 
         // ================================================================
         // 从 GitHub 加载成员数据
@@ -755,8 +762,8 @@
             if (!id) {
                 const active = employees.find(e => e.status === 1);
                 if (active) {
-                    window.history.replaceState({}, '', '?id=' + active.id);
-                    renderCard();
+                    // ★★★ 使用完整的 URL 跳转 ★★★
+                    window.location.href = BASE_URL + '/card.html?id=' + active.id;
                     return;
                 }
                 hideLoading();
@@ -779,6 +786,7 @@
             window._currentMemberId = member.id;
             window._currentMember = member;
             window._employees = employees;
+            window._cardUrl = BASE_URL + '/card.html?id=' + member.id;
 
             document.getElementById('toolbar').style.display = 'flex';
 
@@ -864,7 +872,7 @@
         document.getElementById('shareBtn').addEventListener('click', function() {
             const id = window._currentMemberId;
             if (!id) return;
-            const url = window.location.href.split('?')[0] + '?id=' + id;
+            const url = window._cardUrl || (window.location.href.split('?')[0] + '?id=' + id);
             if (navigator.share) {
                 navigator.share({
                     title: '电子名片',
@@ -875,7 +883,14 @@
                 navigator.clipboard.writeText(url).then(() => {
                     showToast('✅ 链接已复制，可分享给好友');
                 }).catch(() => {
-                    showToast('⚠️ 请手动复制链接: ' + url);
+                    // 降级方案
+                    const input = document.createElement('input');
+                    input.value = url;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    showToast('✅ 链接已复制');
                 });
             }
         });
@@ -909,7 +924,7 @@
         document.getElementById('copyLinkBtn').addEventListener('click', function() {
             const id = window._currentMemberId;
             if (!id) return;
-            const url = window.location.href.split('?')[0] + '?id=' + id;
+            const url = window._cardUrl || (window.location.href.split('?')[0] + '?id=' + id);
             navigator.clipboard.writeText(url).then(() => {
                 showToast('✅ 链接已复制');
             }).catch(() => {
