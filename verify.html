@@ -326,16 +326,11 @@
             opacity: 1;
         }
 
-        /* 环境提示 - 本地调试用 */
         .env-hint {
             font-size: 10px;
             color: #ccc;
             text-align: center;
             margin-top: 6px;
-            display: none;
-        }
-        .env-hint.show {
-            display: block;
         }
 
         @media (max-width: 440px) {
@@ -393,159 +388,119 @@
     <div id="container" class="container">
         <div class="watermark">中国林业与环境促进会</div>
         <div class="top-bar"></div>
-
-        <!-- 内容由JS渲染 -->
         <div id="content"></div>
-
-        <!-- 环境提示（调试用） -->
-        <div class="env-hint" id="envHint">🌐 当前环境：<span id="envLabel">本地</span></div>
+        <div class="env-hint" id="envHint">🌐 当前环境：<span id="envLabel">加载中...</span></div>
     </div>
 
     <div id="toast" class="toast">操作成功</div>
 
     <script>
         // ================================================================
-        // 数据层
+        // 配置
         // ================================================================
 
         const DB_KEY = 'emp_system_data';
-
-        // ================================================================
-        // 环境检测 - 自动判断是本地还是线上
-        // ================================================================
+        const MEMBERS_URL = 'https://zghspj.github.io/qjgwh/members.json';
 
         function getBaseUrl() {
             const host = window.location.host;
             const pathname = window.location.pathname;
+            const origin = window.location.origin;
 
-            // 如果是本地开发（127.0.0.1 或 localhost）
             if (host.includes('127.0.0.1') || host.includes('localhost') || host.includes('192.168.')) {
-                // 本地环境，使用当前路径
-                const base = window.location.origin + pathname.replace(/\/[^/]*$/, '');
-                console.log('📌 本地环境，BASE_URL:', base);
-                return base;
+                return origin + pathname.replace(/\/[^/]*$/, '');
             }
 
-            // GitHub Pages 环境
-            // 如果是 GitHub Pages，需要获取仓库名
-            // 例如：https://zghspj.github.io/business-card-system/
-            // 或者：https://zghspj.github.io/（如果是用户站点）
-            const parts = pathname.split('/').filter(p => p !== '');
-            if (parts.length > 0) {
-                // 有子路径（仓库站点）
-                const repoName = parts[0];
-                const base = window.location.origin + '/' + repoName;
-                console.log('📌 GitHub Pages 仓库环境，BASE_URL:', base);
-                return base;
-            } else {
-                // 用户站点（没有子路径）
-                const base = window.location.origin;
-                console.log('📌 GitHub Pages 用户站点，BASE_URL:', base);
-                return base;
+            if (host.includes('github.io')) {
+                const parts = pathname.split('/').filter(p => p !== '');
+                if (parts.length > 0) {
+                    return origin + '/' + parts[0];
+                }
+                return origin;
             }
+
+            return origin + pathname.replace(/\/[^/]*$/, '');
         }
 
-        // 获取当前环境的基础URL
         const BASE_URL = getBaseUrl();
-
-        // 显示环境提示（调试用）
         const isLocal = window.location.host.includes('127.0.0.1') || window.location.host.includes('localhost');
-        const envHint = document.getElementById('envHint');
-        if (isLocal) {
-            envHint.classList.add('show');
-            document.getElementById('envLabel').textContent = '本地开发 (127.0.0.1)';
-            envHint.style.color = '#ff9800';
-        } else {
-            envHint.classList.add('show');
-            document.getElementById('envLabel').textContent = 'GitHub Pages 线上';
-            envHint.style.color = '#4caf50';
-        }
 
-        console.log('🌐 当前环境 BASE_URL:', BASE_URL);
-        console.log('📌 完整核验链接示例:', BASE_URL + '/verify.html?id=CCPEFYHDC2026110001');
+        document.getElementById('envLabel').textContent = isLocal ? '本地开发' : '线上部署';
+        console.log('🌐 BASE_URL:', BASE_URL);
 
         // ================================================================
-        // 数据操作
+        // 从 GitHub 加载数据
         // ================================================================
 
-        function getEmployees() {
-            const stored = localStorage.getItem(DB_KEY);
-            if (stored) {
-                try {
-                    const data = JSON.parse(stored);
-                    if (data && data.length > 0) return data;
-                } catch (e) {}
+        async function loadMembers() {
+            try {
+                const response = await fetch(MEMBERS_URL, {
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    localStorage.setItem(DB_KEY, JSON.stringify(data));
+                    return data;
+                }
+                throw new Error('数据为空');
+            } catch (e) {
+                console.warn('⚠️ 从 GitHub 加载失败:', e.message);
+                const stored = localStorage.getItem(DB_KEY);
+                if (stored) {
+                    try {
+                        const data = JSON.parse(stored);
+                        if (data && data.length > 0) return data;
+                    } catch (e2) {}
+                }
+                return null;
             }
-            // 默认数据
-            const defaults = [{
-                id: 'CCPEFYHDC2026110001',
-                name: '庄国辉',
-                title: '副主任兼办公室主任',
-                duty: '负责健康工作委员会全面事务与统筹协调。具体包括：主持办公室全面工作，统筹协调各内设机构日常运转；负责秘书处日常工作，承担文秘、会务、机要、档案等综合管理；协调各副主任委员分管工作，督办重要会议事项落实；负责人事、财务、资产、后勤等行政事务管理；负责会员管理、对外联络与来访接待工作。',
-                phone: '18520661777',
-                email: 'zjxqab@163.com',
-                address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
-                wechatQr: '',
-                avatar: '',
-                status: 1
-            }, {
-                id: 'CCPEFYHDC2026110002',
-                name: '黄金平',
-                title: '副主任',
-                duty: '负责青少年生态健康项目统筹',
-                phone: '13337819393',
-                email: '2924603747@qq.com',
-                address: '北京市通州区景盛二街12号纳特园区11号楼2层东厅',
-                wechatQr: '',
-                avatar: '',
-                status: 1
-            }];
-            localStorage.setItem(DB_KEY, JSON.stringify(defaults));
-            return defaults;
         }
 
-        function getMember(id) {
-            const list = getEmployees();
-            return list.find(e => e.id === id) || null;
+        function getMember(id, employees) {
+            return employees.find(e => e.id === id) || null;
         }
 
         // ================================================================
         // 渲染核验页面
         // ================================================================
 
-        function renderPage() {
+        async function renderPage() {
             const content = document.getElementById('content');
             const params = new URLSearchParams(window.location.search);
             let id = params.get('id');
 
+            // 加载数据
+            const employees = await loadMembers();
+            if (!employees || employees.length === 0) {
+                content.innerHTML = `
+                    <div style="text-align:center;padding:40px 0;">
+                        <div style="font-size:48px;margin-bottom:12px;">👥</div>
+                        <div style="font-size:18px;font-weight:600;color:#1b5e20;">暂无人员信息</div>
+                        <p style="color:#888;font-size:14px;margin-top:8px;">请先在管理后台添加成员</p>
+                    </div>
+                `;
+                return;
+            }
+
             if (!id) {
-                const employees = getEmployees();
                 const active = employees.find(e => e.status === 1);
                 if (active) {
-                    // 自动跳转到正确的URL（使用BASE_URL）
-                    const correctUrl = BASE_URL + '/verify.html?id=' + active.id;
-                    console.log('🔄 自动跳转到:', correctUrl);
-                    window.location.href = correctUrl;
+                    // 直接跳转，使用完整的 URL
+                    window.location.href = BASE_URL + '/verify.html?id=' + active.id;
                     return;
                 }
                 content.innerHTML = `
                     <div style="text-align:center;padding:40px 0;">
                         <div style="font-size:48px;margin-bottom:12px;">👥</div>
                         <div style="font-size:18px;font-weight:600;color:#1b5e20;">暂无在职人员</div>
-                        <p style="color:#888;font-size:14px;margin-top:8px;">请在管理后台添加成员</p>
-                        <div style="margin-top:16px;">
-                            <a href="${BASE_URL}/admin.html" style="color:#2e7d32;font-weight:600;text-decoration:none;border-bottom:2px solid #4caf50;padding-bottom:2px;">前往管理后台 →</a>
-                        </div>
-                        <div style="margin-top:12px;font-size:12px;color:#ccc;">
-                            🌐 当前环境: ${isLocal ? '本地开发' : '线上部署'}
-                            <br>BASE_URL: ${BASE_URL}
-                        </div>
                     </div>
                 `;
                 return;
             }
 
-            const member = getMember(id);
+            const member = getMember(id, employees);
             if (!member) {
                 content.innerHTML = `
                     <div style="text-align:center;padding:30px 0;">
@@ -587,6 +542,9 @@
                     </div>
                 </div>
             `;
+
+            // ★★★ 修复：使用完整的 BASE_URL 生成名片链接 ★★★
+            const cardUrl = BASE_URL + '/card.html?id=' + member.id;
 
             content.innerHTML = `
                 <div class="top-logos">
@@ -645,18 +603,20 @@
                     <div class="org">中国林业与环境促进会 · 青少年儿童生态健康发展工作委员会</div>
                     <div class="time">核验时间：${new Date().toLocaleString('zh-CN')}</div>
                     <div class="verify-badge">🔒 官方核验 · 信息真实有效</div>
-                    <div style="font-size:10px;color:#ccc;margin-top:6px;">
-                        🌐 ${isLocal ? '本地开发' : '线上部署'} · ${BASE_URL}
-                    </div>
                 </div>
             `;
+
+            // ================================================================
+            // ★★★ 修复：按钮使用完整的 URL ★★★
+            // ================================================================
 
             document.getElementById('backBtn').addEventListener('click', function() {
                 window.history.back();
             });
 
             document.getElementById('viewCardBtn').addEventListener('click', function() {
-                window.open(BASE_URL + '/card.html?id=' + member.id, '_blank');
+                // ★★★ 使用完整的 URL，不依赖 JavaScript 的 history ★★★
+                window.open(cardUrl, '_blank');
             });
         }
 
@@ -676,12 +636,10 @@
         // 启动
         // ================================================================
 
-        console.log('🚀 核验页面启动');
-        console.log('🌐 BASE_URL:', BASE_URL);
-        console.log('📌 当前URL:', window.location.href);
-
         renderPage();
         window.addEventListener('popstate', renderPage);
+        console.log('✅ 核验页面已启动');
+        console.log('📌 名片链接:', BASE_URL + '/card.html?id=xxx');
     </script>
 </body>
 </html>
