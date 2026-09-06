@@ -17,10 +17,10 @@
             background: #d0dcd0;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 20px 16px;
-            position: relative;
         }
         .card-wrapper {
             position: relative;
@@ -135,7 +135,6 @@
             margin-top: 6px;
         }
 
-        /* 底部工具栏 - 独立于名片 */
         .card-toolbar {
             max-width: 420px;
             width: 100%;
@@ -174,12 +173,6 @@
             background: #2e7d32;
             color: #fff;
         }
-        .card-toolbar .btn.danger {
-            background: #c62828;
-        }
-        .card-toolbar .btn.danger:hover {
-            background: #b71c1c;
-        }
 
         .toast {
             position: fixed;
@@ -200,6 +193,43 @@
             opacity: 1;
         }
 
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-overlay.show {
+            display: flex;
+        }
+        .loading-box {
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        .loading-box .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e8f5e9;
+            border-top: 4px solid #2e7d32;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         @media (max-width: 440px) {
             .card {
                 padding: 20px 16px;
@@ -216,12 +246,20 @@
     </style>
 </head>
 <body>
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-box">
+            <div class="spinner"></div>
+            <p id="loadingText">正在加载名片数据...</p>
+        </div>
+    </div>
+
     <div style="display:flex;flex-direction:column;align-items:center;width:100%;">
         <div class="card-wrapper" id="cardWrapper">
             <div id="cardContainer"></div>
         </div>
 
-        <!-- 底部工具栏 -->
         <div class="card-toolbar" id="toolbar" style="display:none;">
             <button class="btn outline" id="shareBtn">📤 分享</button>
             <button class="btn outline" id="downloadCardBtn">⬇️ 下载名片</button>
@@ -234,27 +272,77 @@
 
     <script>
         // ================================================================
-        // 数据层
+        // 配置 - 从 GitHub 加载数据
         // ================================================================
 
         const DB_KEY = 'emp_system_data';
         const LAYOUT_PREFIX = 'designer_layout_';
-        const BASE_URL = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '');
+        // ★★★ 从 GitHub 加载 members.json ★★★
+        const MEMBERS_URL = 'https://zghspj.github.io/qjgwh/members.json';
 
-        function getEmployees() {
-            const stored = localStorage.getItem(DB_KEY);
-            if (stored) {
-                try {
-                    const data = JSON.parse(stored);
-                    if (data && data.length > 0) return data;
-                } catch (e) {}
+        // 获取当前页面的 BASE_URL
+        function getBaseUrl() {
+            const host = window.location.host;
+            const pathname = window.location.pathname;
+            const origin = window.location.origin;
+
+            if (host.includes('127.0.0.1') || host.includes('localhost') || host.includes('192.168.')) {
+                return origin + pathname.replace(/\/[^/]*$/, '');
             }
-            return [];
+
+            if (host.includes('github.io')) {
+                const parts = pathname.split('/').filter(p => p !== '');
+                if (parts.length > 0) {
+                    return origin + '/' + parts[0];
+                }
+                return origin;
+            }
+
+            return origin + pathname.replace(/\/[^/]*$/, '');
         }
 
-        function getMember(id) {
-            const list = getEmployees();
-            return list.find(e => e.id === id) || null;
+        const BASE_URL = getBaseUrl();
+
+        // ================================================================
+        // 从 GitHub 加载成员数据
+        // ================================================================
+
+        async function loadMembersFromGitHub() {
+            try {
+                const response = await fetch(MEMBERS_URL, {
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                const data = await response.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    // 同时保存到 localStorage 以便后续使用
+                    localStorage.setItem(DB_KEY, JSON.stringify(data));
+                    return data;
+                }
+                throw new Error('数据为空');
+            } catch (e) {
+                console.warn('⚠️ 从 GitHub 加载失败:', e.message);
+                // 回退到 localStorage
+                const stored = localStorage.getItem(DB_KEY);
+                if (stored) {
+                    try {
+                        const data = JSON.parse(stored);
+                        if (data && data.length > 0) {
+                            return data;
+                        }
+                    } catch (e2) {}
+                }
+                return null;
+            }
+        }
+
+        function getMember(id, employees) {
+            return employees.find(e => e.id === id) || null;
         }
 
         function getDesign(memberId) {
@@ -644,36 +732,57 @@
         // 渲染名片
         // ================================================================
 
-        function renderCard() {
+        async function renderCard() {
             const container = document.getElementById('cardContainer');
             const params = new URLSearchParams(window.location.search);
             let id = params.get('id');
 
-            // 如果没有id，尝试找第一个在职成员
+            // 显示加载状态
+            showLoading('正在加载名片数据...');
+
+            // 从 GitHub 加载数据
+            let employees = await loadMembersFromGitHub();
+
+            if (!employees || employees.length === 0) {
+                hideLoading();
+                container.innerHTML =
+                    `<div class="invalid-card"><div class="icon">👥</div><h3>暂无人员信息</h3><p>请先在管理后台添加成员</p></div>`;
+                document.getElementById('toolbar').style.display = 'none';
+                return;
+            }
+
+            // 如果没有 id，找第一个在职成员
             if (!id) {
-                const employees = getEmployees();
                 const active = employees.find(e => e.status === 1);
                 if (active) {
                     window.history.replaceState({}, '', '?id=' + active.id);
                     renderCard();
                     return;
                 }
+                hideLoading();
                 container.innerHTML =
-                    `<div class="invalid-card"><div class="icon">👥</div><h3>暂无人员信息</h3><p>请在后台添加成员</p></div>`;
+                    `<div class="invalid-card"><div class="icon">👥</div><h3>暂无在职人员</h3></div>`;
                 document.getElementById('toolbar').style.display = 'none';
                 return;
             }
 
-            const member = getMember(id);
+            const member = employees.find(e => e.id === id);
             if (!member) {
+                hideLoading();
                 container.innerHTML =
                     `<div class="invalid-card"><div class="icon">🔍</div><h3>查无此人</h3><p>编号 ${id} 不存在</p></div>`;
                 document.getElementById('toolbar').style.display = 'none';
                 return;
             }
 
+            // 保存当前成员信息到全局
+            window._currentMemberId = member.id;
+            window._currentMember = member;
+            window._employees = employees;
+
             document.getElementById('toolbar').style.display = 'flex';
 
+            // 获取设计
             const design = getDesign(id);
             const cardDiv = document.createElement('div');
             cardDiv.className = 'card';
@@ -745,16 +854,13 @@
                 });
             }, 200);
 
-            // 存储当前成员ID供工具栏使用
-            window._currentMemberId = member.id;
-            window._currentMember = member;
+            hideLoading();
         }
 
         // ================================================================
         // 工具栏功能
         // ================================================================
 
-        // 分享
         document.getElementById('shareBtn').addEventListener('click', function() {
             const id = window._currentMemberId;
             if (!id) return;
@@ -774,21 +880,16 @@
             }
         });
 
-        // 下载名片
         document.getElementById('downloadCardBtn').addEventListener('click', function() {
             const card = document.getElementById('cardContent');
             if (!card) {
                 showToast('⚠️ 请先生成名片');
                 return;
             }
-
-            // 使用html2canvas生成图片
-            // 如果没有html2canvas，使用简单提示
             if (typeof html2canvas === 'undefined') {
-                showToast('⚠️ 请引入html2canvas库或使用截图功能');
+                showToast('⚠️ 请使用截图功能保存名片');
                 return;
             }
-
             html2canvas(card, {
                 scale: 2,
                 useCORS: true,
@@ -802,11 +903,9 @@
                 showToast('✅ 名片已下载');
             }).catch(err => {
                 showToast('⚠️ 下载失败，请使用截图');
-                console.error(err);
             });
         });
 
-        // 复制链接
         document.getElementById('copyLinkBtn').addEventListener('click', function() {
             const id = window._currentMemberId;
             if (!id) return;
@@ -814,7 +913,6 @@
             navigator.clipboard.writeText(url).then(() => {
                 showToast('✅ 链接已复制');
             }).catch(() => {
-                // fallback
                 const input = document.createElement('input');
                 input.value = url;
                 document.body.appendChild(input);
@@ -825,7 +923,6 @@
             });
         });
 
-        // 核验
         document.getElementById('viewVerifyBtn').addEventListener('click', function() {
             const id = window._currentMemberId;
             if (!id) return;
@@ -833,8 +930,17 @@
         });
 
         // ================================================================
-        // Toast
+        // Loading / Toast
         // ================================================================
+
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text || '加载中...';
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
 
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -851,13 +957,11 @@
         renderCard();
         window.addEventListener('popstate', renderCard);
         console.log('✅ 名片展示页已启动');
-        console.log('📌 数据来源:', DB_KEY);
+        console.log('📌 数据来源:', MEMBERS_URL);
         console.log('📌 核验页面:', BASE_URL + '/verify.html');
 
-        // 如果html2canvas未加载，提示
+        // 动态加载 html2canvas
         if (typeof html2canvas === 'undefined') {
-            console.warn('⚠️ html2canvas未加载，下载功能需要引入该库');
-            // 动态加载
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
             document.head.appendChild(script);
